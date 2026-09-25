@@ -1,0 +1,66 @@
+#compdef cmaal
+# zsh completion for cmaal
+
+_cmaal_hosts() {
+    local -a hosts
+    [[ -f ~/.ssh/config ]] && hosts=(${(f)"$(awk 'tolower($1) == "host" { for (i = 2; i <= NF; i++) if ($i !~ /[*?!]/) print $i }' ~/.ssh/config)"})
+    print -l -- $hosts
+}
+
+_cmaal() {
+    local -a cmds
+    cmds=(
+        '-S:install from repos, AUR or flatpak'
+        '-Ss:search repos, AUR and flatpak'
+        '-Si:package info'
+        '-Syu:upgrade everything'
+        '-Syyu:upgrade everything, force db refresh'
+        '-Rns:remove package and unused deps'
+        'install:install packages'
+        'search:search everywhere'
+        'remove:remove packages'
+        'upgrade:upgrade everything'
+        'ssh:ssh hosts and keys'
+        'clean:remove orphans and trim caches'
+        'mirrors:rank mirrors with reflector'
+        'news:latest Arch news'
+        'history:recent package changes'
+        'owns:which package owns a command'
+        'big:largest packages'
+        'sys:system overview'
+        'doctor:health check'
+        'helper:show or install an AUR helper'
+        'config:edit config'
+        'self-update:update cmaal'
+        'uninstall:remove cmaal'
+        'help:show help'
+    )
+
+    if (( CURRENT == 2 )); then
+        _describe 'command' cmds
+        return
+    fi
+
+    case $words[2] in
+        -S|-Si|-Sy|install)
+            compadd -- ${(f)"$(pacman -Slq 2>/dev/null)"} ;;
+        -R*|-Q*|remove)
+            compadd -- ${(f)"$(pacman -Qq 2>/dev/null)"} ;;
+        ssh)
+            if (( CURRENT == 3 )); then
+                compadd -- ls add rm edit keygen keys copy test server help ${(f)"$(_cmaal_hosts)"}
+            else
+                case $words[3] in
+                    server) compadd -- on off status ;;
+                    rm|copy|test) compadd -- ${(f)"$(_cmaal_hosts)"} ;;
+                esac
+            fi
+            ;;
+        owns) _command_names ;;
+        helper) compadd -- status install yay paru ;;
+        config) compadd -- edit show path reset ;;
+        self-update) compadd -- --force ;;
+    esac
+}
+
+_cmaal "$@"

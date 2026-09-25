@@ -1,0 +1,1051 @@
+#!/usr/bin/env bash
+# cmaal: a multitool for Arch Linux
+# https://github.com/archlinux-dev/cmaal
+#
+# One command for pacman, AUR helpers (yay, paru, pikaur) and flatpak,
+# plus SSH shortcuts, system maintenance and self updating.
+
+set -o pipefail
+
+CMAAL_VERSION="0.1.0"
+CMAAL_REPO="${CMAAL_REPO:-archlinux-dev/cmaal}"
+CMAAL_BRANCH="${CMAAL_BRANCH:-main}"
+CMAAL_RAW="https://raw.githubusercontent.com/${CMAAL_REPO}/${CMAAL_BRANCH}"
+
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/cmaal"
+CONFIG_FILE="$CONFIG_DIR/config"
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/cmaal"
+
+# ---------------------------------------------------------------------------
+# Defaults (override them in ~/.config/cmaal/config, see `cmaal config`)
+# ---------------------------------------------------------------------------
+AUTO_UPDATE="notify"          # auto | notify | off
+UPDATE_INTERVAL_HOURS=24      # how often to look for a new cmaal version
+AUR_HELPER="auto"             # auto | yay | paru | pikaur | none
+HELPER_ORDER="yay paru pikaur"
+USE_FLATPAK="yes"             # also search/install/upgrade flatpaks
+SHOW_NEWS_ON_UPGRADE="yes"    # show unread Arch news before -Syu
+SSH_USE_KITTEN="auto"         # auto | yes | no  (use `kitten ssh` inside kitty)
+
+# shellcheck source=/dev/null
+[[ -f $CONFIG_FILE ]] && source "$CONFIG_FILE"
+
+# ---------------------------------------------------------------------------
+# Output helpers
+# ---------------------------------------------------------------------------
+if [[ -t 1 && -z ${NO_COLOR:-} ]]; then
+    C_RESET=$'\e[0m' C_BOLD=$'\e[1m' C_DIM=$'\e[2m'
+    C_RED=$'\e[31m' C_GREEN=$'\e[32m' C_YELLOW=$'\e[33m'
+    C_BLUE=$'\e[34m' C_MAGENTA=$'\e[35m' C_CYAN=$'\e[36m'
+else
+    C_RESET="" C_BOLD="" C_DIM="" C_RED="" C_GREEN="" C_YELLOW=""
+    C_BLUE="" C_MAGENTA="" C_CYAN=""
+fi
+
+msg()     { printf '%s::%s %s\n' "$C_BLUE$C_BOLD" "$C_RESET" "$*"; }
+ok()      { printf '%s ok%s %s\n' "$C_GREEN$C_BOLD" "$C_RESET" "$*"; }
+warn()    { printf '%swarn%s %s\n' "$C_YELLOW$C_BOLD" "$C_RESET" "$*" >&2; }
+die()     { printf '%serror%s %s\n' "$C_RED$C_BOLD" "$C_RESET" "$*" >&2; exit 1; }
+section() { printf '\n%s==> %s%s\n' "$C_MAGENTA$C_BOLD" "$*" "$C_RESET"; }
+have()    { command -v "$1" >/dev/null 2>&1; }
+
+CMAAL_YES="${CMAAL_YES:-}"
+
+# true when we can actually talk to a terminal (not piped, not in cron)
+has_tty() { { : </dev/tty; } 2>/dev/null; }
+
+# ask "question" [y|n]  -> returns 0 for yes
+ask() {
+    local question=$1 def=${2:-y} hint reply
+    [[ $def == y ]] && hint="[Y/n]" || hint="[y/N]"
+    if [[ -n $CMAAL_YES ]]; then
+        return 0
+    fi
+    if ! has_tty; then
+        [[ $def == y ]]
+        return
+    fi
+    printf '%s::%s %s %s ' "$C_BLUE$C_BOLD" "$C_RESET" "$question" "$hint" >/dev/tty
+    read -r reply </dev/tty || reply=""
+    reply=${reply:-$def}
+    [[ $reply =~ ^[Yy] ]]
+}
+
+# prompt "question" [default] -> prints the answer
+prompt() {
+    local question=$1 def=${2:-} reply
+    if [[ -n $CMAAL_YES ]] || ! has_tty; then
+        printf '%s\n' "$def"
+        return
+    fi
+    if [[ -n $def ]]; then
+        printf '%s::%s %s [%s]: ' "$C_BLUE$C_BOLD" "$C_RESET" "$question" "$def" >/dev/tty
+    else
+        printf '%s::%s %s: ' "$C_BLUE$C_BOLD" "$C_RESET" "$question" >/dev/tty
+    fi
+    read -r reply </dev/tty || reply=""
+    printf '%s\n' "${reply:-$def}"
+}
+
+as_root() {
+    if (( EUID == 0 )); then
+        "$@"
+    elif have sudo; then
+        sudo "$@"
+    elif have doas; then
+        doas "$@"
+    else
+        die "need root for: $*  (install sudo or doas)"
+    fi
+}
+
+need_arch() {
+    have pacman || die "pacman not found. cmaal package commands only work on Arch based systems."
+}
+
+# ---------------------------------------------------------------------------
+# AUR helper detection
+# ---------------------------------------------------------------------------
+detect_helper() {
+    local h
+    case $AUR_HELPER in
+        none) return 1 ;;
+        auto)
+            for h in $HELPER_ORDER; do
+                have "$h" && { printf '%s\n' "$h"; return 0; }
+            done
+            return 1
+            ;;
+        *)
+            have "$AUR_HELPER" && { printf '%s\n' "$AUR_HELPER"; return 0; }
+            return 1
+            ;;
+    esac
+}
+HELPER=$(detect_helper) || HELPER=""
+
+use_flatpak() { [[ $USE_FLATPAK == yes ]] && have flatpak; }
+
+# Build an AUR helper from source. AUR helpers refuse to run as root.
+cmd_helper() {
+    local sub=${1:-status}
+    case $sub in
+        status|"")
+            if [[ -n $HELPER ]]; then
+                ok "using AUR helper: $HELPER ($("$HELPER" --version 2>/dev/null | head -n1))"
+            else
+                warn "no AUR helper found. Install one with: cmaal helper install [yay|paru]"
+            fi
+            ;;
+        install)
+            local name=${2:-yay} tmp
+            [[ $name == yay || $name == paru ]] || die "supported helpers: yay, paru"
+            (( EUID != 0 )) || die "do not run this as root, makepkg refuses to build as root"
+            need_arch
+            have "$name" && { ok "$name is already installed"; return 0; }
+            msg "Installing build dependencies (git, base-devel)"
+            as_root pacman -S --needed --noconfirm git base-devel || die "could not install git/base-devel"
+            tmp=$(mktemp -d)
+            msg "Building $name-bin from the AUR"
+            git clone --depth 1 "https://aur.archlinux.org/${name}-bin.git" "$tmp/$name" || die "git clone failed"
+            (cd "$tmp/$name" && makepkg -si --noconfirm) || { rm -rf "$tmp"; die "makepkg failed"; }
+            rm -rf "$tmp"
+            HELPER=$name
+            ok "$name installed"
+            ;;
+        *) die "usage: cmaal helper [status|install yay|install paru]" ;;
+    esac
+}
+
+# ---------------------------------------------------------------------------
+# AUR RPC (works even without a helper installed)
+# ---------------------------------------------------------------------------
+# aur_names pkg... -> prints the names that exist in the AUR
+aur_names() {
+    local url="https://aur.archlinux.org/rpc/v5/info?" p out
+    for p in "$@"; do
+        url+="arg%5B%5D=${p//+/%2B}&"
+    done
+    if have curl && out=$(curl -fsSL --max-time 15 "$url" 2>/dev/null) && [[ $out != *'"type":"error"'* ]]; then
+        grep -o '"Name":"[^"]*"' <<<"$out" | cut -d'"' -f4
+        return 0
+    fi
+    # RPC unreachable, ask the helper one by one
+    [[ -n $HELPER ]] || return 1
+    for p in "$@"; do
+        "$HELPER" -Si --aur -- "$p" >/dev/null 2>&1 && printf '%s\n' "$p"
+    done
+}
+
+# ---------------------------------------------------------------------------
+# Flatpak lookup
+# ---------------------------------------------------------------------------
+# flatpak_find name -> prints "remote<TAB>app-id" of the chosen match
+flatpak_find() {
+    local q=$1 line id remote i choice
+    local -a hits=()
+    mapfile -t hits < <(flatpak search --columns=application,remotes -- "$q" 2>/dev/null \
+        | awk -F'\t' 'NF >= 2 && $1 ~ /\./ { split($2, r, ","); print $1 "\t" r[1] }' | head -n 9)
+    (( ${#hits[@]} )) || return 1
+
+    # exact match on a part of the app id: "firefox" -> org.mozilla.firefox,
+    # "spotify" -> com.spotify.Client. Last part wins over middle parts.
+    local pattern
+    for pattern in "*.${q,,}" "*.${q,,}.*"; do
+        for line in "${hits[@]}"; do
+            id=${line%%$'\t'*}
+            # shellcheck disable=SC2053
+            if [[ ${id,,} == $pattern ]]; then
+                remote=${line#*$'\t'}
+                printf '%s\t%s\n' "$remote" "$id"
+                return 0
+            fi
+        done
+    done
+
+    [[ -z $CMAAL_YES ]] && has_tty || return 1
+    printf '%s::%s No exact flatpak for "%s", closest matches:\n' "$C_BLUE$C_BOLD" "$C_RESET" "$q" >/dev/tty
+    for i in "${!hits[@]}"; do
+        printf '   %s%d)%s %s\n' "$C_CYAN" "$((i + 1))" "$C_RESET" "${hits[i]%%$'\t'*}" >/dev/tty
+    done
+    choice=$(prompt "Pick one (enter to skip)")
+    [[ $choice =~ ^[0-9]+$ ]] && (( choice >= 1 && choice <= ${#hits[@]} )) || return 1
+    line=${hits[choice - 1]}
+    printf '%s\t%s\n' "${line#*$'\t'}" "${line%%$'\t'*}"
+}
+
+# ---------------------------------------------------------------------------
+# -S  install from wherever the package lives
+# ---------------------------------------------------------------------------
+cmd_install() {
+    need_arch
+    local -a flags=() pkgs=() repo=() aur=() flat=() missing=() rest=() found=()
+    local a p hit fp_yes=()
+    for a in "$@"; do
+        if [[ $a == -* ]]; then
+            flags+=("$a")
+            [[ $a == --noconfirm ]] && { CMAAL_YES=1; fp_yes=(-y); }
+        else
+            pkgs+=("$a")
+        fi
+    done
+    (( ${#pkgs[@]} )) || die "no packages given. usage: cmaal -S <package>..."
+
+    msg "Looking up ${#pkgs[@]} package(s)..."
+
+    # 1. official repos (also resolves groups and provides)
+    for p in "${pkgs[@]}"; do
+        if pacman -Sp --noconfirm -- "$p" >/dev/null 2>&1; then
+            repo+=("$p")
+        else
+            rest+=("$p")
+        fi
+    done
+
+    # 2. AUR
+    if (( ${#rest[@]} )); then
+        mapfile -t found < <(aur_names "${rest[@]}")
+        local -a still=()
+        for p in "${rest[@]}"; do
+            hit=""
+            for a in "${found[@]}"; do [[ $a == "$p" ]] && hit=1 && break; done
+            if [[ -n $hit ]]; then aur+=("$p"); else still+=("$p"); fi
+        done
+        rest=("${still[@]}")
+    fi
+
+    # 3. flatpak
+    for p in "${rest[@]}"; do
+        if use_flatpak && hit=$(flatpak_find "$p"); then
+            flat+=("$hit")
+        else
+            missing+=("$p")
+        fi
+    done
+
+    (( ${#repo[@]} )) && printf '   %spacman%s   %s\n' "$C_GREEN$C_BOLD" "$C_RESET" "${repo[*]}"
+    (( ${#aur[@]} ))  && printf '   %saur%s      %s\n' "$C_YELLOW$C_BOLD" "$C_RESET" "${aur[*]}"
+    if (( ${#flat[@]} )); then
+        printf '   %sflatpak%s  ' "$C_CYAN$C_BOLD" "$C_RESET"
+        for hit in "${flat[@]}"; do printf '%s ' "${hit#*$'\t'}"; done
+        printf '\n'
+    fi
+    (( ${#missing[@]} )) && printf '   %snot found%s %s\n' "$C_RED$C_BOLD" "$C_RESET" "${missing[*]}"
+
+    if (( ${#repo[@]} + ${#aur[@]} + ${#flat[@]} == 0 )); then
+        die "nothing to install. Try: cmaal -Ss ${missing[0]}"
+    fi
+
+    local rc=0
+    if (( ${#repo[@]} )); then
+        section "pacman -S ${repo[*]}"
+        as_root pacman -S "${flags[@]}" -- "${repo[@]}" || rc=1
+    fi
+
+    if (( ${#aur[@]} )); then
+        if [[ -z $HELPER ]]; then
+            warn "${aur[*]} are AUR packages but no AUR helper is installed"
+            if ask "Install yay now?" y; then
+                cmd_helper install yay || rc=1
+            fi
+        fi
+        if [[ -n $HELPER ]]; then
+            section "$HELPER -S ${aur[*]}"
+            "$HELPER" -S "${flags[@]}" -- "${aur[@]}" || rc=1
+        else
+            rc=1
+        fi
+    fi
+
+    for hit in "${flat[@]}"; do
+        section "flatpak install ${hit#*$'\t'}"
+        flatpak install "${fp_yes[@]}" "${hit%%$'\t'*}" "${hit#*$'\t'}" || rc=1
+    done
+
+    (( ${#missing[@]} )) && rc=1
+    return "$rc"
+}
+
+# ---------------------------------------------------------------------------
+# -Ss  search everywhere
+# ---------------------------------------------------------------------------
+cmd_search() {
+    need_arch
+    (( $# )) || die "usage: cmaal -Ss <query>..."
+    local out
+
+    section "Official repos (pacman)"
+    out=$(pacman -Ss --color=always -- "$@" 2>/dev/null)
+    [[ -n $out ]] && printf '%s\n' "$out" || printf '   %snothing found%s\n' "$C_DIM" "$C_RESET"
+
+    section "AUR${HELPER:+ ($HELPER)}"
+    if [[ -n $HELPER ]]; then
+        out=$("$HELPER" -Ss --aur --color=always -- "$@" 2>/dev/null)
+    elif have curl && have jq; then
+        out=$(curl -fsSL --max-time 15 "https://aur.archlinux.org/rpc/v5/search/$1?by=name-desc" 2>/dev/null \
+            | jq -r '.results | sort_by(-.Popularity) | .[:25][] | "aur/\(.Name) \(.Version)\n    \(.Description // "")"')
+    else
+        out="   (install yay/paru or jq to search the AUR)"
+    fi
+    [[ -n $out ]] && printf '%s\n' "$out" || printf '   %snothing found%s\n' "$C_DIM" "$C_RESET"
+
+    if use_flatpak; then
+        section "Flatpak"
+        out=$(flatpak search --columns=application,version,description -- "$@" 2>/dev/null | grep -v '^No matches')
+        [[ -n $out ]] && printf '%s\n' "$out" | head -n 20 || printf '   %snothing found%s\n' "$C_DIM" "$C_RESET"
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# -Si  info from wherever the package lives
+# ---------------------------------------------------------------------------
+cmd_pkginfo() {
+    need_arch
+    (( $# )) || die "usage: cmaal -Si <package>"
+    local p
+    for p in "$@"; do
+        if pacman -Si -- "$p" 2>/dev/null; then continue; fi
+        if [[ -n $HELPER ]] && "$HELPER" -Si --aur -- "$p" 2>/dev/null; then continue; fi
+        if use_flatpak && flatpak remote-info flathub "$p" 2>/dev/null; then continue; fi
+        warn "$p: not found in repos${HELPER:+, AUR}$(use_flatpak && printf ', flatpak')"
+    done
+}
+
+# ---------------------------------------------------------------------------
+# Arch news
+# ---------------------------------------------------------------------------
+NEWS_URL="https://archlinux.org/feeds/news/"
+
+# news_items N -> "date<TAB>title<TAB>link" lines, newest first
+news_items() {
+    local n=${1:-5} feed
+    feed=$(curl -fsSL --max-time 10 "$NEWS_URL" 2>/dev/null) || return 1
+    { tr -d '\n\r' <<<"$feed"; printf '\n'; } | sed 's/<item>/\n<item>/g' | tail -n +2 | head -n "$n" | while IFS= read -r item; do
+        local title date link
+        title=$(sed -n 's:.*<title>\([^<]*\)</title>.*:\1:p' <<<"$item")
+        date=$(sed -n 's:.*<pubDate>\([^<]*\)</pubDate>.*:\1:p' <<<"$item")
+        link=$(sed -n 's:.*<link>\([^<]*\)</link>.*:\1:p' <<<"$item")
+        title=$(sed -e 's/&lt;/</g; s/&gt;/>/g; s/&quot;/"/g; s/&#39;/'"'"'/g; s/&amp;/\&/g' <<<"$title")
+        date=$(date -d "$date" +%Y-%m-%d 2>/dev/null || printf '%s' "$date")
+        printf '%s\t%s\t%s\n' "$date" "$title" "$link"
+    done
+}
+
+cmd_news() {
+    local n=${1:-5} line
+    [[ $n =~ ^[0-9]+$ ]] || die "usage: cmaal news [count]"
+    local -a items=()
+    mapfile -t items < <(news_items "$n")
+    (( ${#items[@]} )) || die "could not fetch Arch news"
+    section "Arch Linux news"
+    for line in "${items[@]}"; do
+        IFS=$'\t' read -r d t l <<<"$line"
+        printf '   %s%s%s  %s%s%s\n      %s%s%s\n' "$C_DIM" "$d" "$C_RESET" "$C_BOLD" "$t" "$C_RESET" "$C_DIM" "$l" "$C_RESET"
+    done
+    mkdir -p "$CACHE_DIR"
+    printf '%s\n' "${items[0]}" | cut -f2 >"$CACHE_DIR/news_seen"
+}
+
+# Shows news posted since the last time we looked. Returns 1 if the user aborts.
+check_news_before_upgrade() {
+    [[ $SHOW_NEWS_ON_UPGRADE == yes ]] && have curl || return 0
+    local seen="" line
+    local -a items=() unread=()
+    [[ -f $CACHE_DIR/news_seen ]] && seen=$(<"$CACHE_DIR/news_seen")
+    mapfile -t items < <(news_items 5)
+    (( ${#items[@]} )) || return 0
+    for line in "${items[@]}"; do
+        [[ $(cut -f2 <<<"$line") == "$seen" ]] && break
+        unread+=("$line")
+    done
+    mkdir -p "$CACHE_DIR"
+    cut -f2 <<<"${items[0]}" >"$CACHE_DIR/news_seen"
+    # first run: remember the newest item quietly
+    [[ -z $seen ]] && return 0
+    (( ${#unread[@]} )) || return 0
+    section "Unread Arch news (read before upgrading!)"
+    for line in "${unread[@]}"; do
+        IFS=$'\t' read -r d t l <<<"$line"
+        printf '   %s%s%s  %s%s%s\n      %s\n' "$C_DIM" "$d" "$C_RESET" "$C_YELLOW$C_BOLD" "$t" "$C_RESET" "$l"
+    done
+    printf '\n'
+    ask "Continue with the upgrade?" y
+}
+
+# ---------------------------------------------------------------------------
+# -Syu / -Syyu  upgrade everything
+# ---------------------------------------------------------------------------
+cmd_upgrade() {
+    need_arch
+    local op=${1:--Syu}; shift || true
+    local -a extra=("$@") fp_yes=()
+    local a
+    for a in "${extra[@]}"; do
+        [[ $a == --noconfirm ]] && { CMAAL_YES=1; fp_yes=(-y); }
+    done
+
+    check_news_before_upgrade || die "upgrade aborted"
+
+    local rc=0
+    if [[ -n $HELPER ]]; then
+        section "$HELPER $op (repos + AUR)"
+        "$HELPER" "$op" "${extra[@]}" || rc=1
+    else
+        section "pacman $op"
+        as_root pacman "$op" "${extra[@]}" || rc=1
+    fi
+
+    if use_flatpak; then
+        section "flatpak update"
+        flatpak update "${fp_yes[@]}" || rc=1
+    fi
+
+    post_upgrade_checks
+    return "$rc"
+}
+
+post_upgrade_checks() {
+    local -a pacnew=()
+    mapfile -t pacnew < <(find /etc -name '*.pacnew' 2>/dev/null)
+    if (( ${#pacnew[@]} )); then
+        warn "${#pacnew[@]} .pacnew file(s) need merging (tip: sudo pacdiff):"
+        printf '      %s\n' "${pacnew[@]}" >&2
+    fi
+    if [[ ! -d /usr/lib/modules/$(uname -r) ]]; then
+        warn "the running kernel was updated, reboot to load the new one"
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# Anything else that looks like a pacman flag goes to the helper or pacman
+# ---------------------------------------------------------------------------
+passthrough() {
+    need_arch
+    if [[ -n $HELPER ]]; then
+        "$HELPER" "$@"
+        return
+    fi
+    case $1 in
+        -Q*|-T*|-Si*|-Ss*|-Sg*|-Sl*|-F|-Fl*|-Fx*|-Fo*|-Fs*|-V|--version|-h|--help)
+            pacman "$@" ;;
+        *)
+            as_root pacman "$@" ;;
+    esac
+}
+
+# ---------------------------------------------------------------------------
+# Maintenance
+# ---------------------------------------------------------------------------
+cmd_clean() {
+    need_arch
+    local -a orphans=()
+    mapfile -t orphans < <(pacman -Qdtq 2>/dev/null)
+
+    section "Orphaned packages"
+    if (( ${#orphans[@]} )); then
+        printf '   %s\n' "${orphans[*]}"
+        ask "Remove ${#orphans[@]} orphan(s)?" y && as_root pacman -Rns -- "${orphans[@]}"
+    else
+        ok "no orphans"
+    fi
+
+    section "Package cache"
+    if have paccache; then
+        as_root paccache -rk2
+        as_root paccache -ruk0
+    else
+        warn "paccache not found (pacman-contrib). Falling back to pacman -Sc"
+        ask "Run pacman -Sc?" y && as_root pacman -Sc
+    fi
+
+    local d
+    for d in "$HOME/.cache/yay" "$HOME/.cache/paru/clone" "$HOME/.cache/pikaur"; do
+        [[ -d $d ]] || continue
+        section "AUR build cache: $d ($(du -sh "$d" 2>/dev/null | cut -f1))"
+        ask "Delete it?" n && rm -rf -- "$d"
+    done
+
+    if use_flatpak; then
+        section "Unused flatpak runtimes"
+        flatpak uninstall --unused -y
+    fi
+
+    if have journalctl; then
+        section "systemd journal ($(journalctl --disk-usage 2>/dev/null | grep -o '[0-9.]*[KMGT]\?B' | head -n1))"
+        ask "Shrink journal to the last 2 weeks?" y && as_root journalctl --vacuum-time=2weeks
+    fi
+    ok "clean done"
+}
+
+cmd_mirrors() {
+    need_arch
+    if ! have reflector; then
+        ask "reflector is not installed. Install it?" y || return 1
+        as_root pacman -S --needed reflector || return 1
+    fi
+    local -a args=(--latest 20 --protocol https --sort rate --save /etc/pacman.d/mirrorlist)
+    [[ -n ${1:-} ]] && args+=(--country "$1")
+    msg "Backing up mirrorlist to /etc/pacman.d/mirrorlist.bak"
+    as_root cp /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.bak
+    msg "Ranking mirrors${1:+ in $1} (this takes a moment)"
+    as_root reflector "${args[@]}" && ok "mirrorlist updated" && as_root pacman -Syy
+}
+
+cmd_history() {
+    local n=${1:-25} log=/var/log/pacman.log
+    [[ -r $log ]] || die "cannot read $log"
+    grep -E '\[ALPM\] (installed|upgraded|removed|downgraded)' "$log" | tail -n "$n" \
+        | sed -E "s/^\[([^]]*)\] \[ALPM\] (installed)/\1 ${C_GREEN}\2${C_RESET}/; \
+                  s/^\[([^]]*)\] \[ALPM\] (upgraded|downgraded)/\1 ${C_BLUE}\2${C_RESET}/; \
+                  s/^\[([^]]*)\] \[ALPM\] (removed)/\1 ${C_RED}\2${C_RESET}/"
+}
+
+cmd_owns() {
+    need_arch
+    (( $# )) || die "usage: cmaal owns <command|file>"
+    local t path
+    for t in "$@"; do
+        if [[ $t == */* ]]; then path=$t; else path=$(command -v -- "$t") || { warn "$t: not found"; continue; }; fi
+        pacman -Qo -- "$path" || true
+    done
+}
+
+cmd_big() {
+    need_arch
+    local n=${1:-20}
+    LC_ALL=C pacman -Qi | awk -v n="$n" '
+        /^Name/ { name = $3 }
+        /^Installed Size/ {
+            size = $4; unit = $5
+            mult = 1
+            if (unit == "KiB") mult = 1024
+            else if (unit == "MiB") mult = 1024 ^ 2
+            else if (unit == "GiB") mult = 1024 ^ 3
+            printf "%d\t%s %s\t%s\n", size * mult, size, unit, name
+        }' | sort -rn | head -n "$n" | awk -F'\t' '{ printf "   %-12s %s\n", $2, $3 }'
+}
+
+cmd_sys() {
+    local os kernel up pkgs aur fp="" mem disk cpu shell term
+    # shellcheck source=/dev/null
+    os=$(. /etc/os-release 2>/dev/null && printf '%s' "${PRETTY_NAME:-$NAME}")
+    kernel=$(uname -r)
+    up=$(uptime -p 2>/dev/null | sed 's/^up //')
+    if have pacman; then
+        pkgs=$(pacman -Qq | wc -l)
+        aur=$(pacman -Qmq | wc -l)
+    fi
+    use_flatpak && fp=$(flatpak list --app --columns=application 2>/dev/null | wc -l)
+    cpu=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | sed 's/^ *//')
+    mem=$(free -h 2>/dev/null | awk '/^Mem/ { print $3 " / " $2 }')
+    disk=$(df -h / 2>/dev/null | awk 'NR == 2 { print $3 " / " $2 " (" $5 ")" }')
+    shell=$(basename "${SHELL:-?}")
+    term=${TERM_PROGRAM:-$TERM}
+    [[ -n ${KITTY_WINDOW_ID:-} ]] && term="kitty"
+
+    local k
+    row() { printf '   %s%-10s%s %s\n' "$C_CYAN$C_BOLD" "$1" "$C_RESET" "$2"; }
+    section "$(whoami)@${HOSTNAME:-$(uname -n)}"
+    row "OS" "$os"
+    row "Kernel" "$kernel"
+    row "Uptime" "$up"
+    [[ -n ${pkgs:-} ]] && row "Packages" "$pkgs (pacman), $aur (foreign/AUR)${fp:+, $fp (flatpak)}"
+    row "AUR" "${HELPER:-none}"
+    row "Shell" "$shell"
+    row "Terminal" "$term"
+    row "CPU" "$cpu"
+    row "Memory" "$mem"
+    row "Disk /" "$disk"
+    k=$(systemctl --failed --no-legend 2>/dev/null | wc -l)
+    (( k > 0 )) && row "Failed" "${C_RED}$k systemd unit(s), see: systemctl --failed${C_RESET}"
+    return 0
+}
+
+cmd_doctor() {
+    local t
+    section "Tools"
+    for t in pacman sudo curl git "$HELPER" flatpak fzf reflector paccache ssh kitten jq; do
+        [[ -z $t ]] && continue
+        if have "$t"; then
+            printf '   %s+%s %s\n' "$C_GREEN" "$C_RESET" "$t"
+        else
+            printf '   %s-%s %s %s(optional)%s\n' "$C_RED" "$C_RESET" "$t" "$C_DIM" "$C_RESET"
+        fi
+    done
+    [[ -z $HELPER ]] && printf '   %s-%s AUR helper %s(cmaal helper install)%s\n' "$C_RED" "$C_RESET" "$C_DIM" "$C_RESET"
+
+    section "System"
+    if have pacman; then
+        local orphans pacnew
+        orphans=$(pacman -Qdtq 2>/dev/null | wc -l)
+        pacnew=$(find /etc -name '*.pacnew' 2>/dev/null | wc -l)
+        printf '   orphans: %s   .pacnew files: %s\n' "$orphans" "$pacnew"
+        [[ -d /usr/lib/modules/$(uname -r) ]] || warn "kernel updated since boot, reboot recommended"
+    fi
+    if have systemctl; then
+        local failed
+        failed=$(systemctl --failed --no-legend 2>/dev/null | wc -l)
+        printf '   failed systemd units: %s\n' "$failed"
+    fi
+
+    section "cmaal"
+    printf '   version: %s\n   installed at: %s\n   config: %s\n   auto update: %s\n' \
+        "$CMAAL_VERSION" "$(self_path)" "$CONFIG_FILE" "$AUTO_UPDATE"
+}
+
+# ---------------------------------------------------------------------------
+# SSH
+# ---------------------------------------------------------------------------
+SSH_DIR="$HOME/.ssh"
+SSH_CONFIG="$SSH_DIR/config"
+
+ssh_hosts() {
+    [[ -f $SSH_CONFIG ]] || return 0
+    awk 'tolower($1) == "host" { for (i = 2; i <= NF; i++) if ($i !~ /[*?!]/) print $i }' "$SSH_CONFIG"
+}
+
+in_kitty() { [[ $TERM == xterm-kitty || -n ${KITTY_WINDOW_ID:-} ]]; }
+
+# kitten ssh copies kitty's terminfo to the server, so no "unknown terminal" errors
+ssh_connect() {
+    if [[ $SSH_USE_KITTEN == yes ]] || { [[ $SSH_USE_KITTEN == auto ]] && in_kitty; }; then
+        if have kitten; then
+            kitten ssh "$@"
+            return
+        fi
+    fi
+    ssh "$@"
+}
+
+ssh_list() {
+    local h
+    local -a hosts=()
+    mapfile -t hosts < <(ssh_hosts)
+    if (( ! ${#hosts[@]} )); then
+        msg "No hosts in $SSH_CONFIG yet. Add one: cmaal ssh add"
+        return 0
+    fi
+    for h in "${hosts[@]}"; do
+        local target
+        target=$(ssh -G "$h" 2>/dev/null | awk '$1 == "user" { u = $2 } $1 == "hostname" { hn = $2 } $1 == "port" { p = $2 } END { print u "@" hn ":" p }')
+        printf '   %s%-20s%s %s\n' "$C_CYAN$C_BOLD" "$h" "$C_RESET" "$target"
+    done
+}
+
+ssh_pick() {
+    local -a hosts=()
+    local choice
+    mapfile -t hosts < <(ssh_hosts)
+    (( ${#hosts[@]} )) || { msg "No saved hosts. Add one: cmaal ssh add"; return 1; }
+    if have fzf; then
+        choice=$(printf '%s\n' "${hosts[@]}" | fzf --height 40% --reverse --prompt 'ssh> ' \
+            --preview 'ssh -G {} | grep -E "^(hostname|user|port|identityfile) "') || return 1
+    else
+        ssh_list
+        choice=$(prompt "Host")
+    fi
+    [[ -n $choice ]] || return 1
+    ssh_connect "$choice"
+}
+
+ssh_add() {
+    local alias=${1:-} target=${2:-} key=${3:-} user host port
+    [[ -n $alias ]] || alias=$(prompt "Alias (short name)")
+    [[ -n $alias ]] || die "alias required"
+    [[ $alias =~ ^[A-Za-z0-9._-]+$ ]] || die "alias may only contain letters, numbers, . _ -"
+    ssh_hosts | grep -qx -- "$alias" && die "host '$alias' already exists (cmaal ssh rm $alias)"
+
+    [[ -n $target ]] || target=$(prompt "Address (user@host[:port])")
+    [[ -n $target ]] || die "address required"
+    if [[ $target == *@* ]]; then user=${target%%@*}; host=${target#*@}; else user=""; host=$target; fi
+    if [[ $host == *:* ]]; then port=${host##*:}; host=${host%:*}; else port=""; fi
+    [[ -n $user ]] || user=$(prompt "User" "$USER")
+    [[ -n $port ]] || port=$(prompt "Port" "22")
+    if [[ -z $key && -z $CMAAL_YES ]] && has_tty; then
+        key=$(prompt "Identity file (enter for default)")
+    fi
+
+    mkdir -p "$SSH_DIR" && chmod 700 "$SSH_DIR"
+    touch "$SSH_CONFIG" && chmod 600 "$SSH_CONFIG"
+    {
+        [[ -s $SSH_CONFIG ]] && printf '\n'
+        printf 'Host %s\n    HostName %s\n    User %s\n' "$alias" "$host" "$user"
+        [[ $port != 22 ]] && printf '    Port %s\n' "$port"
+        [[ -n $key ]] && printf '    IdentityFile %s\n' "$key"
+    } >>"$SSH_CONFIG"
+    ok "added '$alias'. Connect with: cmaal ssh $alias"
+}
+
+ssh_rm() {
+    local alias=${1:-}
+    [[ -n $alias ]] || die "usage: cmaal ssh rm <alias>"
+    ssh_hosts | grep -qx -- "$alias" || die "no host named '$alias'"
+    cp "$SSH_CONFIG" "$SSH_CONFIG.bak"
+    awk -v a="$alias" '
+        tolower($1) == "host" || tolower($1) == "match" { skip = (tolower($1) == "host" && NF == 2 && $2 == a) }
+        !skip' "$SSH_CONFIG.bak" >"$SSH_CONFIG"
+    ok "removed '$alias' (backup: $SSH_CONFIG.bak)"
+}
+
+ssh_keygen() {
+    local name=${1:-id_ed25519} file
+    file="$SSH_DIR/$name"
+    mkdir -p "$SSH_DIR" && chmod 700 "$SSH_DIR"
+    if [[ -e $file ]]; then
+        ask "$file exists. Overwrite?" n || return 1
+    fi
+    ssh-keygen -t ed25519 -a 100 -C "${USER}@${HOSTNAME:-$(uname -n)}" -f "$file"
+}
+
+ssh_keys() {
+    local f any=""
+    for f in "$SSH_DIR"/*.pub; do
+        [[ -e $f ]] || continue
+        any=1
+        printf '   %s%s%s\n      %s\n' "$C_CYAN$C_BOLD" "${f##*/}" "$C_RESET" "$(ssh-keygen -lf "$f")"
+    done
+    [[ -n $any ]] || msg "no keys yet. Create one: cmaal ssh keygen"
+}
+
+ssh_server() {
+    case ${1:-status} in
+        on|enable|start)
+            have sshd || { ask "openssh is not installed. Install it?" y && as_root pacman -S --needed openssh; } || return 1
+            as_root systemctl enable --now sshd && ok "sshd running"
+            ;;
+        off|disable|stop)
+            as_root systemctl disable --now sshd && ok "sshd stopped"
+            ;;
+        status)
+            systemctl status sshd --no-pager
+            ;;
+        *) die "usage: cmaal ssh server [on|off|status]" ;;
+    esac
+}
+
+cmd_ssh() {
+    have ssh || die "ssh not found. Install it with: cmaal -S openssh"
+    local sub=${1:-}
+    case $sub in
+        "") ssh_pick ;;
+        ls|list) ssh_list ;;
+        add|new) shift; ssh_add "$@" ;;
+        rm|remove|del) shift; ssh_rm "$@" ;;
+        edit) mkdir -p "$SSH_DIR"; "${EDITOR:-nano}" "$SSH_CONFIG" ;;
+        keygen) shift; ssh_keygen "$@" ;;
+        keys) ssh_keys ;;
+        copy|copy-id)
+            shift
+            [[ -n ${1:-} ]] || die "usage: cmaal ssh copy <host> [key.pub]"
+            if [[ -n ${2:-} ]]; then ssh-copy-id -i "$2" "$1"; else ssh-copy-id "$1"; fi
+            ;;
+        test)
+            shift
+            [[ -n ${1:-} ]] || die "usage: cmaal ssh test <host>"
+            if ssh -o BatchMode=yes -o ConnectTimeout=5 "$1" true 2>/dev/null; then
+                ok "$1 reachable, key login works"
+            else
+                warn "$1: key login failed or host unreachable"
+                return 1
+            fi
+            ;;
+        server) shift; ssh_server "$@" ;;
+        help|-h|--help) usage_ssh ;;
+        *) ssh_connect "$@" ;;
+    esac
+}
+
+# ---------------------------------------------------------------------------
+# Self update
+# ---------------------------------------------------------------------------
+self_path() { readlink -f -- "${BASH_SOURCE[0]}"; }
+
+version_gt() {
+    [[ $1 != "$2" && $(printf '%s\n%s\n' "$1" "$2" | sort -V | tail -n1) == "$1" ]]
+}
+
+remote_version() {
+    curl -fsSL --max-time "${1:-10}" "$CMAAL_RAW/VERSION" 2>/dev/null | head -n1 | tr -d '[:space:]'
+}
+
+cmd_self_update() {
+    local force=${1:-} remote tmp target
+    have curl || die "curl is required"
+    remote=$(remote_version 10)
+    [[ -n $remote ]] || die "could not reach $CMAAL_RAW"
+    if [[ $force != --force ]] && ! version_gt "$remote" "$CMAAL_VERSION"; then
+        ok "cmaal is up to date (v$CMAAL_VERSION)"
+        return 0
+    fi
+    tmp=$(mktemp)
+    curl -fsSL --max-time 30 "$CMAAL_RAW/cmaal" -o "$tmp" || { rm -f "$tmp"; die "download failed"; }
+    if ! bash -n "$tmp" || ! grep -q '^CMAAL_VERSION=' "$tmp"; then
+        rm -f "$tmp"
+        die "downloaded file looks broken, not installing it"
+    fi
+    target=$(self_path)
+    if [[ -w $target ]]; then
+        install -m 755 "$tmp" "$target"
+    else
+        as_root install -m 755 "$tmp" "$target"
+    fi
+    rm -f "$tmp"
+    mkdir -p "$CACHE_DIR" && printf '%s\n' "$remote" >"$CACHE_DIR/remote_version"
+    ok "updated cmaal v$CMAAL_VERSION -> v$remote"
+}
+
+# Checks for updates in the background so it never slows a command down.
+# The result is picked up on the next run.
+auto_update_check() {
+    [[ $AUTO_UPDATE == off ]] && return 0
+    [[ -t 1 ]] && have curl || return 0
+    mkdir -p "$CACHE_DIR" 2>/dev/null || return 0
+
+    local stamp="$CACHE_DIR/last_update_check" now last=0 remote=""
+    now=$(date +%s)
+    [[ -f $stamp ]] && last=$(<"$stamp")
+    [[ $last =~ ^[0-9]+$ ]] || last=0
+
+    if (( now - last >= UPDATE_INTERVAL_HOURS * 3600 )); then
+        printf '%s\n' "$now" >"$stamp"
+        ( v=$(remote_version 5) && [[ -n $v ]] && printf '%s\n' "$v" >"$CACHE_DIR/remote_version" ) >/dev/null 2>&1 &
+        disown 2>/dev/null || true
+    fi
+
+    [[ -f $CACHE_DIR/remote_version ]] && remote=$(<"$CACHE_DIR/remote_version")
+    [[ -n $remote ]] && version_gt "$remote" "$CMAAL_VERSION" || return 0
+
+    if [[ $AUTO_UPDATE == auto ]]; then
+        msg "Auto updating cmaal to v$remote"
+        cmd_self_update || warn "auto update failed, run: cmaal self-update"
+    else
+        printf '%s::%s cmaal %sv%s%s is available (you have v%s). Run: %scmaal self-update%s\n' \
+            "$C_YELLOW$C_BOLD" "$C_RESET" "$C_GREEN" "$remote" "$C_RESET" "$CMAAL_VERSION" "$C_BOLD" "$C_RESET" >&2
+    fi
+}
+
+cmd_version() {
+    printf 'cmaal v%s\n' "$CMAAL_VERSION"
+    local remote=""
+    [[ -f $CACHE_DIR/remote_version ]] && remote=$(<"$CACHE_DIR/remote_version")
+    if [[ -n $remote ]] && version_gt "$remote" "$CMAAL_VERSION"; then
+        printf 'update available: v%s (cmaal self-update)\n' "$remote"
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# Config / uninstall
+# ---------------------------------------------------------------------------
+write_default_config() {
+    mkdir -p "$CONFIG_DIR"
+    cat >"$CONFIG_FILE" <<'EOF'
+# cmaal config. This file is sourced by bash.
+
+# Self update: auto (update silently), notify (just tell me), off
+AUTO_UPDATE="notify"
+UPDATE_INTERVAL_HOURS=24
+
+# AUR helper: auto, yay, paru, pikaur, none
+AUR_HELPER="auto"
+# Order used when AUR_HELPER=auto
+HELPER_ORDER="yay paru pikaur"
+
+# Search/install/upgrade flatpaks too: yes / no
+USE_FLATPAK="yes"
+
+# Show unread Arch news before -Syu: yes / no
+SHOW_NEWS_ON_UPGRADE="yes"
+
+# Use `kitten ssh` (copies kitty terminfo to servers): auto / yes / no
+SSH_USE_KITTEN="auto"
+EOF
+}
+
+cmd_config() {
+    case ${1:-edit} in
+        path) printf '%s\n' "$CONFIG_FILE" ;;
+        show)
+            if [[ -f $CONFIG_FILE ]]; then cat "$CONFIG_FILE"; else msg "no config yet, defaults in use"; fi
+            ;;
+        reset) write_default_config && ok "config reset: $CONFIG_FILE" ;;
+        edit)
+            [[ -f $CONFIG_FILE ]] || write_default_config
+            "${EDITOR:-nano}" "$CONFIG_FILE"
+            ;;
+        *) die "usage: cmaal config [edit|show|path|reset]" ;;
+    esac
+}
+
+cmd_uninstall() {
+    local target
+    target=$(self_path)
+    ask "Remove cmaal ($target) and its shell completions?" n || return 1
+    local f
+    for f in "$target" \
+        /usr/share/bash-completion/completions/cmaal \
+        /usr/share/zsh/site-functions/_cmaal \
+        /usr/share/fish/vendor_completions.d/cmaal.fish \
+        "$HOME/.local/share/bash-completion/completions/cmaal" \
+        "$HOME/.local/share/zsh/site-functions/_cmaal" \
+        "$HOME/.config/fish/completions/cmaal.fish"; do
+        [[ -e $f ]] || continue
+        if [[ -w $(dirname "$f") ]]; then rm -f -- "$f"; else as_root rm -f -- "$f"; fi
+    done
+    ask "Also remove config and cache ($CONFIG_DIR, $CACHE_DIR)?" n && rm -rf -- "$CONFIG_DIR" "$CACHE_DIR"
+    ok "cmaal removed. Bye!"
+}
+
+# ---------------------------------------------------------------------------
+# Help
+# ---------------------------------------------------------------------------
+usage() {
+    cat <<EOF
+${C_BOLD}cmaal${C_RESET} v$CMAAL_VERSION  a multitool for Arch Linux
+
+${C_BOLD}PACKAGES${C_RESET}  (checks pacman, then the AUR, then flatpak)
+  cmaal -S <pkg>...          install from wherever the package exists
+  cmaal -Ss <query>          search repos, AUR and flatpak at once
+  cmaal -Si <pkg>            package info from any source
+  cmaal -Syu                 upgrade everything (repos, AUR, flatpak)
+  cmaal -Syyu                same, but force refresh of package databases
+  cmaal -R/-Rns/-Q...        any other pacman flag is passed through
+  cmaal install|search|remove|upgrade   word aliases for the above
+
+${C_BOLD}SSH${C_RESET}
+  cmaal ssh                  pick a saved host and connect (fzf if installed)
+  cmaal ssh <host> [args]    connect (uses kitten ssh inside kitty)
+  cmaal ssh ls               list saved hosts
+  cmaal ssh add [alias] [user@host[:port]] [keyfile]
+  cmaal ssh rm <alias>       remove a saved host
+  cmaal ssh keygen [name]    create an ed25519 key
+  cmaal ssh keys             list your public keys
+  cmaal ssh copy <host>      copy your key to a server (ssh-copy-id)
+  cmaal ssh test <host>      check that key login works
+  cmaal ssh server on|off|status   manage the local sshd
+  cmaal ssh edit             open ~/.ssh/config
+
+${C_BOLD}SYSTEM${C_RESET}
+  cmaal clean                remove orphans, trim caches and journal
+  cmaal mirrors [country]    rank the fastest mirrors with reflector
+  cmaal news [n]             latest Arch Linux news
+  cmaal history [n]          recent installs, upgrades and removals
+  cmaal owns <cmd|file>      which package owns a command or file
+  cmaal big [n]              largest installed packages
+  cmaal sys                  system overview
+  cmaal doctor               check tools and system health
+  cmaal helper [install yay|paru]   show or install an AUR helper
+
+${C_BOLD}CMAAL${C_RESET}
+  cmaal self-update [--force]   update cmaal from GitHub
+  cmaal config [edit|show|path|reset]
+  cmaal uninstall
+  cmaal -V, --version
+  cmaal -h, --help
+
+Add ${C_BOLD}--noconfirm${C_RESET} to skip questions.
+EOF
+}
+
+usage_ssh() {
+    usage | sed -n '/^.*SSH/,/^$/p'
+}
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+main() {
+    local cmd=${1:-}
+    [[ $# -gt 0 ]] && shift
+
+    case $cmd in
+        ""|-h|--help|help) usage; return 0 ;;
+        -V|--version|version) cmd_version; return 0 ;;
+        self-update|--self-update|selfupdate) cmd_self_update "$@"; return ;;
+    esac
+
+    auto_update_check
+
+    # --noconfirm is kept for package commands (pacman understands it)
+    # and stripped for everything else
+    local a
+    local -a plain=()
+    for a in "$@"; do
+        if [[ $a == --noconfirm ]]; then CMAAL_YES=1; else plain+=("$a"); fi
+    done
+
+    case $cmd in
+        -S|install|in)              cmd_install "$@" ;;
+        -Ss|search|s|find)          cmd_search "$@" ;;
+        -Si|pkginfo)                cmd_pkginfo "$@" ;;
+        -Syu|-Syyu|-Su|-Suy|-Syuu)  cmd_upgrade "$cmd" "$@" ;;
+        upgrade|update|up)          cmd_upgrade -Syu "$@" ;;
+        -Sy)
+            if (( $# )); then
+                as_root pacman -Sy && cmd_install "$@"
+            else
+                as_root pacman -Sy
+            fi
+            ;;
+        remove|rm|uninstall-pkg)    passthrough -Rns "$@" ;;
+        ssh)                        cmd_ssh "${plain[@]}" ;;
+        clean|cleanup)              cmd_clean "${plain[@]}" ;;
+        mirrors|mirror)             cmd_mirrors "${plain[@]}" ;;
+        news)                       cmd_news "${plain[@]}" ;;
+        history|log)                cmd_history "${plain[@]}" ;;
+        owns|who|which)             cmd_owns "${plain[@]}" ;;
+        big|size|sizes)             cmd_big "${plain[@]}" ;;
+        sys|sysinfo|info)           cmd_sys "${plain[@]}" ;;
+        doctor|check)               cmd_doctor "${plain[@]}" ;;
+        helper)                     cmd_helper "${plain[@]}" ;;
+        config|conf)                cmd_config "${plain[@]}" ;;
+        uninstall)                  cmd_uninstall "${plain[@]}" ;;
+        -*)                         passthrough "$cmd" "$@" ;;
+        *)
+            warn "unknown command: $cmd"
+            printf 'Run %scmaal --help%s for a list of commands.\n' "$C_BOLD" "$C_RESET" >&2
+            return 1
+            ;;
+    esac
+}
+
+main "$@"
