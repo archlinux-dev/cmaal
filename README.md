@@ -38,16 +38,24 @@ cmaal looks in the official repos first, then the AUR, then flatpak, and install
 | Command | What it does |
 | --- | --- |
 | `cmaal -S <pkg>...` | install from repos, AUR or flatpak |
+| `cmaal -S` | browse every package (repos, AUR, flatpak) in fzf with a live preview, TAB to pick several |
 | `cmaal -Ss <query>` | search repos, AUR and flatpak at once |
 | `cmaal -Si <pkg>` | package info from any source |
 | `cmaal -Syu` | upgrade everything: repos + AUR + flatpak |
 | `cmaal -Syyu` | same, with a forced database refresh |
 | `cmaal -Rns`, `-Q`, `-Qi`, ... | any other pacman flag is passed straight through |
+| `cmaal -Rns` | no package name: pick what to remove in fzf |
+| `cmaal undo` | revert the last install / upgrade / removal |
+| `cmaal downgrade <pkg>` | pick an older version from your cache or the Arch Linux Archive |
+| `cmaal pkglist export [file]` | save every package you installed (repo, AUR, flatpak) to a file |
+| `cmaal pkglist import [file]` | install everything from that file, e.g. on a fresh Arch install |
 | `cmaal install / search / remove / upgrade` | word versions of the above |
 
 Before `-Syu`, cmaal shows any Arch news posted since your last upgrade and asks before continuing (news posts often contain manual steps). After upgrading it tells you about `.pacnew` files and whether a reboot is needed for a new kernel.
 
-Add `--noconfirm` to skip all questions.
+If you use **snapper** (btrfs) or **timeshift**, cmaal takes a snapshot before every `-Syu`, so a broken upgrade can be rolled back completely. It skips this if `snap-pac` or `timeshift-autosnap` already do it.
+
+Add `--noconfirm` to skip all questions (cmaal then picks the default answer, like pacman).
 
 ## SSH
 
@@ -55,6 +63,7 @@ Add `--noconfirm` to skip all questions.
 | --- | --- |
 | `cmaal ssh` | pick a saved host and connect (fuzzy search with fzf) |
 | `cmaal ssh <host>` | connect |
+| `cmaal ssh -t [host]` | connect in a new kitty tab |
 | `cmaal ssh ls` | list saved hosts |
 | `cmaal ssh add [alias] [user@host[:port]] [keyfile]` | save a host (asks for missing bits) |
 | `cmaal ssh rm <alias>` | remove a host (makes a backup first) |
@@ -69,6 +78,12 @@ Hosts are stored in your normal `~/.ssh/config`, so plain `ssh` sees them too.
 
 **kitty:** when you run cmaal inside kitty, it connects with `kitten ssh`, which copies kitty's terminfo to the server. No more `unknown terminal type xterm-kitty` errors or broken backspace on remote machines.
 
+New tabs (`-t`, or `SSH_NEW_TAB="yes"` in the config) need this line in `~/.config/kitty/kitty.conf`, then restart kitty:
+
+```
+allow_remote_control yes
+```
+
 ## System
 
 | Command | What it does |
@@ -79,9 +94,25 @@ Hosts are stored in your normal `~/.ssh/config`, so plain `ssh` sees them too.
 | `cmaal history [n]` | recent installs, upgrades and removals |
 | `cmaal owns <cmd>` | which package a command or file belongs to |
 | `cmaal big [n]` | largest installed packages |
+| `cmaal fix` | fix common pacman problems: leftover lock file, keyring / signature errors, dead mirrors, broken database |
+| `cmaal snapshot [list/create/restore]` | snapper or timeshift snapshots |
+| `cmaal services [--user]` | pick a systemd service, then start / stop / restart / enable / disable / logs |
+| `cmaal services <name> <action>` | same without the menu, e.g. `cmaal services bluetooth restart` |
+| `cmaal logs` | errors since boot (`prev` = last boot, `-f` = follow, or a service name) |
+| `cmaal ports` | which programs are listening on which ports |
+| `cmaal ip` | local and public IP addresses |
 | `cmaal sys` | system overview |
+| `cmaal fetch` | system info next to the Arch logo |
 | `cmaal doctor` | check tools and system health |
 | `cmaal helper install yay` | install an AUR helper (yay or paru) |
+
+## Fun
+
+| Command | What it does |
+| --- | --- |
+| `cmaal theme` | pick a kitty color theme (live preview) |
+| `cmaal theme <name>` | switch straight to a theme, e.g. `cmaal theme Catppuccin-Mocha` |
+| `cmaal weather [city]` | 3 day forecast from wttr.in |
 
 ## Updating cmaal
 
@@ -105,6 +136,9 @@ HELPER_ORDER="yay paru pikaur"
 USE_FLATPAK="yes"
 SHOW_NEWS_ON_UPGRADE="yes"
 SSH_USE_KITTEN="auto"         # auto | yes | no
+SSH_NEW_TAB="no"              # yes = cmaal ssh opens a new kitty tab
+SNAPSHOT_BEFORE_UPGRADE="auto" # auto | yes | no
+WEATHER_CITY=""               # empty = detect from your IP
 ```
 
 ## Notes
