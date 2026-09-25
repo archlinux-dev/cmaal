@@ -25,6 +25,18 @@ _cmaal() {
         'mirrors:rank mirrors with reflector'
         'news:latest Arch news'
         'history:recent package changes'
+        'undo:revert the last pacman transaction'
+        'downgrade:go back to an older version'
+        'snapshot:snapper/timeshift snapshots'
+        'fix:fix common pacman problems'
+        'pkglist:export or import all packages'
+        'services:manage systemd services'
+        'logs:errors from the journal'
+        'ports:listening ports'
+        'ip:local and public IP'
+        'theme:change kitty theme'
+        'weather:weather forecast'
+        'fetch:system info with the Arch logo'
         'owns:which package owns a command'
         'big:largest packages'
         'sys:system overview'
@@ -44,11 +56,11 @@ _cmaal() {
     case $words[2] in
         -S|-Si|-Sy|install)
             compadd -- ${(f)"$(pacman -Slq 2>/dev/null)"} ;;
-        -R*|-Q*|remove)
+        -R*|-Q*|remove|downgrade)
             compadd -- ${(f)"$(pacman -Qq 2>/dev/null)"} ;;
         ssh)
             if (( CURRENT == 3 )); then
-                compadd -- ls add rm edit keygen keys copy test server help ${(f)"$(_cmaal_hosts)"}
+                compadd -- -t ls add rm edit keygen keys copy test server help ${(f)"$(_cmaal_hosts)"}
             else
                 case $words[3] in
                     server) compadd -- on off status ;;
@@ -57,6 +69,16 @@ _cmaal() {
             fi
             ;;
         owns) _command_names ;;
+        snapshot) compadd -- list create restore ;;
+        pkglist) if (( CURRENT == 3 )); then compadd -- export import; else _files; fi ;;
+        services)
+            if (( CURRENT == 3 )); then
+                compadd -- --user ${(f)"$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk '{ sub(/\.service$/, "", $1); print $1 }')"}
+            else
+                compadd -- status start stop restart enable disable logs
+            fi
+            ;;
+        logs) compadd -- prev -f ${(f)"$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk '{ sub(/\.service$/, "", $1); print $1 }')"} ;;
         helper) compadd -- status install yay paru ;;
         config) compadd -- edit show path reset ;;
         self-update) compadd -- --force ;;
