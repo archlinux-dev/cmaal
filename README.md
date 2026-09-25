@@ -1,5 +1,7 @@
 # cmaal
 
+> Pls don't be to mean, its my first project with claude code where i actualy came up with the ideas
+
 A multitool for Arch Linux. One command instead of juggling `pacman`, `yay`, `paru` and `flatpak`, plus SSH shortcuts, system cleanup and self updating.
 
 ```
