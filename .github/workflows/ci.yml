@@ -1,0 +1,78 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck
+        run: shellcheck bin/cmaal lib/*.sh install.sh cmaal tests/run.sh completions/cmaal.bash
+      - name: syntax
+        run: for f in bin/cmaal lib/*.sh install.sh cmaal tests/run.sh packaging/PKGBUILD; do bash -n "$f"; done
+      - name: versions match
+        run: |
+          v=$(tr -d '[:space:]' < VERSION)
+          echo "VERSION: $v"
+          grep -q "^pkgver=$v\$" packaging/PKGBUILD || { echo "packaging/PKGBUILD pkgver is not $v"; exit 1; }
+          grep -q "^CMAAL_VERSION=\"$v\"\$" cmaal || { echo "legacy updater (./cmaal) is not $v"; exit 1; }
+          grep -q "^## $v\$" CHANGELOG.md || { echo "CHANGELOG.md has no '## $v' section"; exit 1; }
+      - name: test suite
+        run: make test
+
+  arch-package:
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    steps:
+      - name: prepare Arch
+        run: |
+          # the docker image skips docs and man pages (NoExtract); a real
+          # install doesn't, so behave like one
+          sed -i '/^NoExtract/d' /etc/pacman.conf
+          pacman -Syu --noconfirm --needed git make namcap man-db
+          useradd -m builder
+          echo 'builder ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/builder
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: copy the checkout for the build user
+        run: |
+          cp -r "$GITHUB_WORKSPACE" /home/builder/src
+          chown -R builder:builder /home/builder/src
+          sudo -u builder git config --global --add safe.directory '*'
+          # CI checks out a detached HEAD, the installer wants a branch
+          sudo -u builder git -C /home/builder/src switch -c ci-build
+      - name: fake an old single-file install (0.2) to test the move
+        run: |
+          printf '#!/bin/bash\nCMAAL_VERSION="0.2.0"\necho old\n' > /usr/local/bin/cmaal
+          chmod +x /usr/local/bin/cmaal
+          mkdir -p /usr/share/bash-completion/completions
+          echo '# old' > /usr/share/bash-completion/completions/cmaal
+      - name: install.sh builds and installs the package
+        run: sudo -u builder bash -c 'cd /home/builder/src && bash install.sh --yes'
+      - name: pacman owns cmaal, the old copy is gone
+        run: |
+          pacman -Qi cmaal
+          pacman -Ql cmaal
+          test ! -e /usr/local/bin/cmaal
+          # /usr/sbin is a symlink to /usr/bin on Arch, compare real paths
+          test "$(readlink -f "$(command -v cmaal)")" = /usr/bin/cmaal
+          pacman -Qo /usr/share/bash-completion/completions/cmaal
+          sudo -u builder cmaal --version | tee /dev/stderr | grep -q '(package install)'
+          sudo -u builder cmaal help hold
+          sudo -u builder cmaal whatsnew
+          man -w cmaal
+      - name: namcap
+        run: |
+          cd /home/builder/src/packaging
+          namcap PKGBUILD
+      - name: test suite on Arch
+        run: sudo -u builder make -C /home/builder/src test
+      - name: pacman -Rns removes everything
+        run: |
+          pacman -Rns --noconfirm cmaal
+          test ! -e /usr/bin/cmaal
+          test ! -e /usr/lib/cmaal

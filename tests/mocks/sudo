@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+printf "sudo %s\n" "$*" >>"${MOCK_LOG:?}"
+exec "$@"

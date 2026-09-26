@@ -1,0 +1,34 @@
+# cmaal config. This file is sourced by bash.
+
+# Self update: auto (update silently), notify (just tell me), off
+AUTO_UPDATE="notify"
+UPDATE_INTERVAL_HOURS=24
+
+# AUR helper: auto, yay, paru, pikaur, none
+AUR_HELPER="auto"
+# Order used when AUR_HELPER=auto
+HELPER_ORDER="yay paru pikaur"
+
+# Search/install/upgrade flatpaks too: yes / no
+USE_FLATPAK="yes"
+
+# Show unread Arch news before -Syu: yes / no
+SHOW_NEWS_ON_UPGRADE="yes"
+
+# Use `kitten ssh` (copies kitty terminfo to servers): auto / yes / no
+SSH_USE_KITTEN="auto"
+
+# Open `cmaal ssh` connections in a new kitty tab: yes / no
+# (needs `allow_remote_control yes` in ~/.config/kitty/kitty.conf)
+SSH_NEW_TAB="no"
+
+# Snapshot with snapper or timeshift before -Syu: auto / yes / no
+# auto skips it when snap-pac or timeshift-autosnap already do this
+SNAPSHOT_BEFORE_UPGRADE="auto"
+
+# Default city for `cmaal weather` (empty = detect from your IP)
+WEATHER_CITY=""
+
+# Desktop notification when an upgrade takes longer than this many seconds
+# (needs libnotify). 0 = never
+NOTIFY_AFTER_SECONDS=60

@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+F=${MOCK_FIXTURES:?}
+printf 'flatpak %s\n' "$*" >>"${MOCK_LOG:?}"
+last=${*: -1}
+case $1 in
+    search)
+        out=$(grep -i -- "$last" "$F/flatpak.txt" | awk '{ print $1 "\t" $2 }')
+        if [[ -n $out ]]; then printf '%s\n' "$out"; else echo "No matches found"; fi ;;
+    remotes) echo flathub ;;
+    remote-ls)
+        if [[ $* == *--updates* ]]; then :; else awk '{ print $1 }' "$F/flatpak.txt"; fi ;;
+    list) printf 'flathub\tcom.spotify.Client\n' ;;
+esac
+exit 0

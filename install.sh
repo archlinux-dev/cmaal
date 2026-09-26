@@ -3,31 +3,38 @@
 #
 #   curl -fsSL https://raw.githubusercontent.com/archlinux-dev/cmaal/main/install.sh | bash
 #
-# or from a clone:
+# On Arch this builds cmaal as a real pacman package (makepkg -si), so
+# pacman tracks every file: `pacman -Qi cmaal`, `pacman -R cmaal`.
 #
-#   ./install.sh            install system wide to /usr/local/bin (uses sudo)
-#   ./install.sh --user     install to ~/.local/bin (no sudo)
-#   ./install.sh --uninstall
-#   ./install.sh --yes      don't ask anything, just install
+#   ./install.sh               build + install the pacman package (default)
+#   ./install.sh --user        no package, no root: make install to ~/.local
+#   ./install.sh --manual      no package: make install to /usr/local
+#   ./install.sh --uninstall   remove cmaal, however it was installed
+#   ./install.sh --yes         use the default answer for every question
 
 set -euo pipefail
 
 REPO="${CMAAL_REPO:-archlinux-dev/cmaal}"
 BRANCH="${CMAAL_BRANCH:-main}"
 RAW="https://raw.githubusercontent.com/${REPO}/${BRANCH}"
+TARBALL="https://github.com/${REPO}/archive/refs/heads/${BRANCH}.tar.gz"
 
-MODE="system"
+# Only the test suite sets this, to keep its fake old installs in a sandbox
+SYSROOT="${CMAAL_TEST_SYSROOT:-}"
+
+MODE="package"
 ACTION="install"
 YES=""
 
 for arg in "$@"; do
     case $arg in
         --user) MODE="user" ;;
-        --system) MODE="system" ;;
+        --manual|--system) MODE="manual" ;;
+        --package) MODE="package" ;;
         --uninstall|--remove) ACTION="uninstall" ;;
         -y|--yes|--noconfirm) YES=1 ;;
         -h|--help)
-            sed -n '2,12p' "$0" 2>/dev/null | sed 's/^# \{0,1\}//'
+            sed -n '2,15p' "$0" 2>/dev/null | sed 's/^# \{0,1\}//'
             exit 0
             ;;
         *) echo "unknown option: $arg" >&2; exit 1 ;;
@@ -65,32 +72,59 @@ as_root() {
     if (( EUID == 0 )); then "$@"
     elif have sudo; then sudo "$@"
     elif have doas; then doas "$@"
-    else die "need sudo or doas to install system wide (or use --user)"
+    else die "need sudo or doas for this (or use --user)"
     fi
 }
 
-if [[ $MODE == system ]]; then
-    BIN_DIR="/usr/local/bin"
-    BASH_COMP="/usr/share/bash-completion/completions/cmaal"
-    ZSH_COMP="/usr/share/zsh/site-functions/_cmaal"
-    FISH_COMP="/usr/share/fish/vendor_completions.d/cmaal.fish"
-    put() { as_root install -Dm"$1" "$2" "$3"; }
-    del() { as_root rm -f -- "$@"; }
-else
-    BIN_DIR="$HOME/.local/bin"
-    BASH_COMP="${XDG_DATA_HOME:-$HOME/.local/share}/bash-completion/completions/cmaal"
-    ZSH_COMP="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/site-functions/_cmaal"
-    FISH_COMP="${XDG_CONFIG_HOME:-$HOME/.config}/fish/completions/cmaal.fish"
-    put() { install -Dm"$1" "$2" "$3"; }
-    del() { rm -f -- "$@"; }
-fi
-BIN="$BIN_DIR/cmaal"
+# rm that uses root only when needed
+rm_any() {
+    local f
+    for f in "$@"; do
+        [[ -e $f || -L $f ]] || continue
+        if [[ -w $(dirname "$f") ]]; then rm -rf -- "$f"; else as_root rm -rf -- "$f"; fi
+    done
+}
+
+owned_by_pacman() { have pacman && pacman -Qqo -- "$1" >/dev/null 2>&1; }
+
+# Files from installs that are not the package: the old single-file
+# versions (0.1, 0.2) and `make install` copies in /usr/local or ~/.local.
+# They would shadow /usr/bin/cmaal (both come first in PATH).
+non_package_files() {
+    local p f
+    for p in "$SYSROOT/usr/local" "$HOME/.local"; do
+        for f in "$p/bin/cmaal" "$p/lib/cmaal" "$p/share/cmaal" "$p/share/doc/cmaal" \
+                 "$p/share/licenses/cmaal" "$p/share/man/man1/cmaal.1" \
+                 "$p/share/bash-completion/completions/cmaal" "$p/share/zsh/site-functions/_cmaal" \
+                 "$p/share/fish/vendor_completions.d/cmaal.fish"; do
+            [[ -e $f ]] && printf '%s\n' "$f"
+        done
+    done
+    # 0.1/0.2 system installs put completions straight into /usr/share
+    for f in "$SYSROOT"/usr/share/bash-completion/completions/cmaal "$SYSROOT"/usr/share/zsh/site-functions/_cmaal \
+             "$SYSROOT"/usr/share/fish/vendor_completions.d/cmaal.fish "$HOME/.config/fish/completions/cmaal.fish"; do
+        [[ -e $f ]] && ! owned_by_pacman "$f" && printf '%s\n' "$f"
+    done
+    return 0
+}
+
+remove_non_package_files() {
+    local -a old=()
+    mapfile -t old < <(non_package_files)
+    (( ${#old[@]} )) || return 0
+    msg "Removing the old non-package install:"
+    printf '      %s\n' "${old[@]}"
+    rm_any "${old[@]}"
+}
 
 # ---------------------------------------------------------------------------
 if [[ $ACTION == uninstall ]]; then
-    msg "Removing cmaal ($MODE install)"
-    del "$BIN" "$BASH_COMP" "$ZSH_COMP" "$FISH_COMP"
-    if ask "Also remove config and cache (~/.config/cmaal, ~/.cache/cmaal)?" n; then
+    if have pacman && pacman -Qq cmaal >/dev/null 2>&1; then
+        msg "Removing the cmaal package"
+        as_root pacman -Rns cmaal
+    fi
+    remove_non_package_files
+    if ask "Also remove your config and cache (~/.config/cmaal, ~/.cache/cmaal)?" n; then
         rm -rf -- "${XDG_CONFIG_HOME:-$HOME/.config}/cmaal" "${XDG_CACHE_HOME:-$HOME/.cache}/cmaal"
     fi
     ok "cmaal uninstalled"
@@ -109,45 +143,97 @@ cat <<'EOF'
 EOF
 printf '%s' "$R"
 
-if ! have pacman; then
-    warn "pacman not found. cmaal is made for Arch Linux; package commands will not work here."
-    ask "Install anyway?" n || exit 1
+if [[ $MODE == package ]] && ! have makepkg; then
+    warn "makepkg not found (not Arch, or base-devel missing), installing without a package"
+    MODE="manual"
+fi
+if [[ $MODE == package ]] && (( EUID == 0 )); then
+    die "run the installer as your normal user (makepkg refuses to build as root). It asks for sudo when needed."
 fi
 
-# Get the files: from the local clone if we're in one, otherwise from GitHub
+# Are we inside a clone of the repo?
 SRC_DIR=""
 self=${BASH_SOURCE[0]:-}
 if [[ -n $self && -f $self ]]; then
     here=$(cd "$(dirname "$self")" && pwd)
-    [[ -f $here/cmaal && -d $here/completions ]] && SRC_DIR=$here
+    [[ -f $here/lib/core.sh && -f $here/packaging/PKGBUILD ]] && SRC_DIR=$here
 fi
 
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
-if [[ -z $SRC_DIR ]]; then
-    have curl || die "curl is required (sudo pacman -S curl)"
-    msg "Downloading cmaal from github.com/$REPO ($BRANCH)"
-    mkdir -p "$TMP/completions"
-    for f in cmaal completions/cmaal.bash completions/_cmaal completions/cmaal.fish; do
-        curl -fsSL --max-time 30 "$RAW/$f" -o "$TMP/$f" || die "download failed: $f"
-    done
-    SRC_DIR=$TMP
-fi
+install_package() {
+    msg "Building the cmaal package"
+    if [[ -n $SRC_DIR ]]; then
+        cp "$SRC_DIR/packaging/PKGBUILD" "$TMP/PKGBUILD"
+        export CMAAL_SOURCE="git+file://$SRC_DIR"
+        CMAAL_BRANCH=$(git -C "$SRC_DIR" rev-parse --abbrev-ref HEAD)
+        if [[ $CMAAL_BRANCH == HEAD ]]; then
+            # detached checkout (a tag, a CI run): build exactly this commit
+            CMAAL_GITREF="commit=$(git -C "$SRC_DIR" rev-parse HEAD)"
+            export CMAAL_GITREF
+            msg "  from your local checkout (commit ${CMAAL_GITREF#commit=}, committed changes only)"
+        else
+            export CMAAL_BRANCH
+            msg "  from your local checkout ($CMAAL_BRANCH, committed changes only)"
+        fi
+    else
+        have curl || die "curl is required"
+        curl -fsSL --max-time 30 "$RAW/packaging/PKGBUILD" -o "$TMP/PKGBUILD" || die "could not download the PKGBUILD"
+        export CMAAL_BRANCH="$BRANCH" CMAAL_REPO="$REPO"
+        msg "  from github.com/$REPO ($BRANCH)"
+    fi
+    local -a flags=(-s --clean --force) yes=()
+    [[ -n $YES ]] && yes=(--noconfirm)
 
-bash -n "$SRC_DIR/cmaal" || die "cmaal script failed a syntax check, not installing"
-VERSION=$(sed -n 's/^CMAAL_VERSION="\(.*\)"/\1/p' "$SRC_DIR/cmaal")
+    # build first, so a failed build leaves the old install alone
+    mkdir -p "$TMP/out"
+    (cd "$TMP" && PKGDEST="$TMP/out" makepkg "${flags[@]}" "${yes[@]}") || die "makepkg failed, nothing was changed"
+    local -a built=("$TMP"/out/cmaal-*.pkg.tar.*)
+    [[ -f ${built[0]} ]] || die "makepkg did not produce a package"
 
-msg "Installing cmaal v$VERSION to $BIN"
-put 755 "$SRC_DIR/cmaal" "$BIN"
-put 644 "$SRC_DIR/completions/cmaal.bash" "$BASH_COMP"
-put 644 "$SRC_DIR/completions/_cmaal" "$ZSH_COMP"
-put 644 "$SRC_DIR/completions/cmaal.fish" "$FISH_COMP"
-ok "installed binary and bash/zsh/fish completions"
+    # old copies would shadow /usr/bin/cmaal, and old completions would
+    # make pacman refuse to install ("exists in filesystem")
+    remove_non_package_files
+
+    msg "Installing ${built[0]##*/}"
+    as_root pacman -U "${yes[@]}" -- "${built[0]}" || die "pacman could not install the package"
+    BIN="$SYSROOT/usr/bin/cmaal"
+}
+
+install_manual() {
+    local prefix=$1
+    have make || die "make is required (sudo pacman -S make)"
+    local src=$SRC_DIR
+    if [[ -z $src ]]; then
+        have curl || die "curl is required"
+        msg "Downloading cmaal from github.com/$REPO ($BRANCH)"
+        curl -fsSL --max-time 60 "$TARBALL" | tar -xz -C "$TMP" || die "download failed"
+        src=$(find "$TMP" -mindepth 1 -maxdepth 1 -type d | head -n1)
+    fi
+    bash -n "$src/bin/cmaal" || die "cmaal failed a syntax check, not installing"
+    msg "Installing to $prefix"
+    if [[ -w $prefix || ( ! -e $prefix && -w $(dirname "$prefix") ) ]] || [[ $prefix == "$HOME"* ]]; then
+        make -s -C "$src" install PREFIX="$prefix"
+    else
+        as_root make -s -C "$src" install PREFIX="$prefix"
+    fi
+    BIN="$prefix/bin/cmaal"
+}
+
+case $MODE in
+    package) install_package ;;
+    manual)  install_manual /usr/local ;;
+    user)    install_manual "$HOME/.local" ;;
+esac
+
+[[ -x $BIN ]] || die "install finished but $BIN is missing"
+VERSION=$("$BIN" --version 2>/dev/null | head -n1)
+ok "installed $VERSION"
 
 # ~/.local/bin is not always on PATH
-if [[ $MODE == user && ":$PATH:" != *":$BIN_DIR:"* ]]; then
-    warn "$BIN_DIR is not in your PATH"
+if [[ $MODE == user && ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+    warn "$HOME/.local/bin is not in your PATH"
     shell_name=$(basename "${SHELL:-bash}")
     case $shell_name in
         zsh)  rc="$HOME/.zshrc";  line="export PATH=\"\$HOME/.local/bin:\$PATH\"" ;;
@@ -175,7 +261,8 @@ if have pacman; then
     have paccache || extras+=(pacman-contrib)
     if (( ${#extras[@]} )); then
         msg "Optional extras make cmaal nicer: ${extras[*]}"
-        msg "  fzf = fuzzy host picker for 'cmaal ssh', reflector = 'cmaal mirrors', pacman-contrib = cache cleaning"
+        msg "  fzf = pickers for packages, services, versions and ssh hosts"
+        msg "  reflector = 'cmaal mirrors', pacman-contrib = 'cmaal updates' and cache cleaning"
         if ask "Install them?" y; then
             as_root pacman -S --needed --noconfirm "${extras[@]}" || warn "could not install extras"
         fi
@@ -192,6 +279,7 @@ if have pacman; then
 fi
 
 printf '\n'
-ok "${B}cmaal v$VERSION is ready.${R} Try: ${B}cmaal --help${R}"
+ok "${B}cmaal is ready.${R} Try: ${B}cmaal --help${R}  or  ${B}man cmaal${R}"
+[[ $MODE == package ]] && msg "It's a real package now: pacman -Qi cmaal"
 [[ ${TERM:-} == xterm-kitty ]] && msg "kitty detected: 'cmaal ssh' will use 'kitten ssh' automatically"
 msg "If 'cmaal' isn't found right away, open a new terminal or run: hash -r"

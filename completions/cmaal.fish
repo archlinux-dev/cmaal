@@ -4,7 +4,7 @@ function __cmaal_hosts
     test -f ~/.ssh/config; and awk 'tolower($1) == "host" { for (i = 2; i <= NF; i++) if ($i !~ /[*?!]/) print $i }' ~/.ssh/config
 end
 
-set -l cmds -S -Ss -Si -Syu -Syyu -Rns install search remove upgrade ssh clean mirrors news history owns big sys doctor helper config self-update uninstall help undo downgrade snapshot fix pkglist services logs ports ip theme weather fetch
+set -l cmds -S -Ss -Si -Syu -Syyu -Rns install search remove upgrade ssh clean mirrors news history owns big sys doctor helper config self-update uninstall help undo downgrade snapshot fix pkglist services logs ports ip theme weather fetch updates why files provides pkgbuild hold unhold holds orphans kernel disk whatsnew
 
 complete -c cmaal -f
 complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "-S" -d "install from repos, AUR or flatpak"
@@ -41,8 +41,21 @@ complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "theme" -d "chan
 complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "weather" -d "weather forecast"
 complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "fetch" -d "system info with Arch logo"
 
+complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "updates" -d "list pending updates"
+complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "why" -d "why is a package installed"
+complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "files" -d "files of a package"
+complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "provides" -d "package for a missing command"
+complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "pkgbuild" -d "show a build script"
+complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "hold" -d "keep packages at their version"
+complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "unhold" -d "let held packages upgrade"
+complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "holds" -d "list held packages"
+complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "orphans" -d "unused dependencies"
+complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "kernel" -d "running vs installed kernels"
+complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "disk" -d "disk usage"
+complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "whatsnew" -d "what changed"
+
 complete -c cmaal -n "__fish_seen_subcommand_from -S -Si install" -a "(pacman -Slq 2>/dev/null)"
-complete -c cmaal -n "__fish_seen_subcommand_from -Rns remove downgrade" -a "(pacman -Qq 2>/dev/null)"
+complete -c cmaal -n "__fish_seen_subcommand_from -Rns remove downgrade why files hold" -a "(pacman -Qq 2>/dev/null)"
 complete -c cmaal -n "__fish_seen_subcommand_from ssh" -a "-t ls add rm edit keygen keys copy test server (__cmaal_hosts)"
 complete -c cmaal -n "__fish_seen_subcommand_from owns" -a "(__fish_complete_command)"
 complete -c cmaal -n "__fish_seen_subcommand_from helper" -a "status install yay paru"
@@ -51,3 +64,6 @@ complete -c cmaal -n "__fish_seen_subcommand_from snapshot" -a "list create rest
 complete -c cmaal -n "__fish_seen_subcommand_from pkglist" -a "export import" -F
 complete -c cmaal -n "__fish_seen_subcommand_from services" -a "--user status start stop restart enable disable logs"
 complete -c cmaal -n "__fish_seen_subcommand_from logs" -a "prev -f"
+complete -c cmaal -n "__fish_seen_subcommand_from pkgbuild" -a "(pacman -Slq 2>/dev/null)"
+complete -c cmaal -n "__fish_seen_subcommand_from unhold" -a "(pacman-conf IgnorePkg 2>/dev/null)"
+complete -c cmaal -n "__fish_seen_subcommand_from orphans" -a "rm"

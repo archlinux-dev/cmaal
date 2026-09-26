@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+F=${MOCK_FIXTURES:?}
+printf 'yay %s\n' "$*" >>"${MOCK_LOG:?}"
+names=(); for a in "$@"; do [[ $a == -* ]] || names+=("$a"); done
+case $1 in
+    -Ss) grep -i -- "${names[0]}" "$F/aur.txt" | awk '{ printf "aur/%s %s\n    an AUR package\n", $1, $2 }' ;;
+    -Si) grep -q "^${names[0]} " "$F/aur.txt" || exit 1; printf 'Name : %s\n' "${names[0]}" ;;
+    -Qua) printf 'yay-bin 12.3.5-1 -> 12.4.0-1\n' ;;
+    --version) echo "yay v12.3.5" ;;
+esac
+exit 0

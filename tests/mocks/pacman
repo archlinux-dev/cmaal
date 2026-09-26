@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# Fake pacman for the test suite. Reads tests/fixtures, logs every call.
+F=${MOCK_FIXTURES:?}
+printf 'pacman %s\n' "$*" >>"${MOCK_LOG:?}"
+op=$1; shift
+names=()
+for a in "$@"; do [[ $a == -* ]] || names+=("$a"); done
+
+repo_has() { awk -v n="$1" '$2 == n { f = 1 } END { exit !f }' "$F/repo.txt"; }
+installed() { awk -v n="$1" '$1 == n { f = 1 } END { exit !f }' "$F/installed.txt"; }
+qi() {
+    awk -v n="$1" '$1 == n {
+        printf "Name            : %s\nVersion         : %s\n", $1, $2
+        printf "Install Reason  : %s\n", ($3 == "explicit" ? "Explicitly installed" : "Installed as a dependency for another package")
+        printf "Required By     : %s\nOptional For    : None\nInstalled Size  : 2.00 MiB\n\n", $5
+    }' "$F/installed.txt"
+}
+
+case $op in
+    -Sp) for p in "${names[@]}"; do repo_has "$p" || exit 1; done ;;
+    -Sl) awk '{ print $1, $2, $3 }' "$F/repo.txt" ;;
+    -Slq) awk '{ print $2 }' "$F/repo.txt" ;;
+    -Ss) grep -i -- "${names[0]}" "$F/repo.txt" | awk '{ printf "%s/%s %s\n    a package\n", $1, $2, $3 }' ;;
+    -Si) repo_has "${names[0]}" || exit 1; printf 'Name            : %s\n' "${names[0]}" ;;
+    -Q)
+        if (( ${#names[@]} )); then
+            installed "${names[0]}" || exit 1
+            awk -v n="${names[0]}" '$1 == n { print $1, $2 }' "$F/installed.txt"
+        else
+            awk '{ print $1, $2 }' "$F/installed.txt"
+        fi
+        ;;
+    -Qq) awk '{ print $1 }' "$F/installed.txt" ;;
+    -Qe) awk '$3 == "explicit" { print $1, $2 }' "$F/installed.txt" ;;
+    -Qqen) awk '$3 == "explicit" && $4 == "repo" { print $1 }' "$F/installed.txt" ;;
+    -Qqem|-Qmq) awk '$4 == "aur" { print $1 }' "$F/installed.txt" ;;
+    -Qdtq) awk '$3 == "dep" && $5 == "None" { print $1 }' "$F/installed.txt" | grep . ;;
+    -Qi)
+        if (( ${#names[@]} )); then
+            for p in "${names[@]}"; do installed "$p" || exit 1; qi "$p"; done
+        else
+            awk '{ print $1 }' "$F/installed.txt" | while read -r p; do qi "$p"; done
+        fi
+        ;;
+    -Qo|-Qqo) exit 1 ;;
+    -Qu) cat "$F/updates.txt" ;;
+    -Ql|-Qlq) installed "${names[0]}" || exit 1; printf '/usr/\n/usr/bin/\n/usr/bin/%s\n' "${names[0]}" ;;
+    -F)
+        q=${names[0]##*/}
+        repo_has "$q" || exit 1
+        awk -v n="$q" '$2 == n { printf "%s/%s %s\n    usr/bin/%s\n", $1, $2, $3, $2 }' "$F/repo.txt"
+        ;;
+    -Flq) repo_has "${names[0]}" || exit 1; printf 'usr/\nusr/bin/%s\n' "${names[0]}" ;;
+    *) exit 0 ;;
+esac

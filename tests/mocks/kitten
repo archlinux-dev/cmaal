@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+printf "kitten %s\n" "$*" >>"${MOCK_LOG:?}"

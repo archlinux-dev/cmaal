@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Fake fzf: "selects" every input line matching $MOCK_FZF_PICK (a regex).
+# Empty or unset = the user pressed ESC.
+printf 'fzf %s\n' "$*" >>"${MOCK_LOG:?}"
+[[ -n ${MOCK_FZF_PICK:-} ]] || exit 130
+grep -E -- "$MOCK_FZF_PICK" || exit 1

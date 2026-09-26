@@ -25,6 +25,18 @@ _cmaal() {
         'mirrors:rank mirrors with reflector'
         'news:latest Arch news'
         'history:recent package changes'
+        'updates:list pending updates'
+        'why:why is a package installed'
+        'files:files of a package'
+        'provides:which package provides a command'
+        'pkgbuild:show a package build script'
+        'hold:keep packages at their version'
+        'unhold:let held packages upgrade'
+        'holds:list held packages'
+        'orphans:unused dependencies'
+        'kernel:running vs installed kernels'
+        'disk:disk usage'
+        'whatsnew:what changed in this version'
         'undo:revert the last pacman transaction'
         'downgrade:go back to an older version'
         'snapshot:snapper/timeshift snapshots'
@@ -56,7 +68,7 @@ _cmaal() {
     case $words[2] in
         -S|-Si|-Sy|install)
             compadd -- ${(f)"$(pacman -Slq 2>/dev/null)"} ;;
-        -R*|-Q*|remove|downgrade)
+        -R*|-Q*|remove|downgrade|why|files|hold)
             compadd -- ${(f)"$(pacman -Qq 2>/dev/null)"} ;;
         ssh)
             if (( CURRENT == 3 )); then
@@ -69,6 +81,10 @@ _cmaal() {
             fi
             ;;
         owns) _command_names ;;
+        pkgbuild) compadd -- ${(f)"$(pacman -Slq 2>/dev/null)"} ;;
+        unhold) compadd -- ${(f)"$(pacman-conf IgnorePkg 2>/dev/null)"} ;;
+        orphans) compadd -- rm ;;
+        whatsnew) compadd -- all ;;
         snapshot) compadd -- list create restore ;;
         pkglist) if (( CURRENT == 3 )); then compadd -- export import; else _files; fi ;;
         services)

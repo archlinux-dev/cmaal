@@ -1,0 +1,156 @@
+#!/usr/bin/env bash
+# cmaal: a multitool for Arch Linux
+# https://github.com/archlinux-dev/cmaal
+#
+# One command for pacman, AUR helpers (yay, paru, pikaur) and flatpak,
+# plus SSH shortcuts, system maintenance, rollbacks and self updating.
+#
+# This file is only the entry point. The commands live in modules under
+# /usr/lib/cmaal (or lib/ in a git checkout).
+
+set -o pipefail
+
+# Filled in by `make install`. Empty means we run from a git checkout.
+CMAAL_VERSION=""
+CMAAL_PREFIX=""
+
+CMAAL_BIN=$(readlink -f -- "${BASH_SOURCE[0]}")
+if [[ -n $CMAAL_PREFIX ]]; then
+    CMAAL_LIB="$CMAAL_PREFIX/lib/cmaal"
+    CMAAL_SHARE="$CMAAL_PREFIX/share/cmaal"
+    CMAAL_DOC="$CMAAL_PREFIX/share/doc/cmaal"
+    CMAAL_ROOT=""
+else
+    CMAAL_ROOT=$(dirname "$(dirname "$CMAAL_BIN")")
+    CMAAL_LIB="$CMAAL_ROOT/lib"
+    CMAAL_SHARE="$CMAAL_ROOT/share"
+    CMAAL_DOC="$CMAAL_ROOT"
+    CMAAL_VERSION=$(tr -d '[:space:]' <"$CMAAL_ROOT/VERSION" 2>/dev/null)
+fi
+CMAAL_VERSION=${CMAAL_VERSION:-unknown}
+
+CMAAL_REPO="${CMAAL_REPO:-archlinux-dev/cmaal}"
+CMAAL_BRANCH="${CMAAL_BRANCH:-main}"
+CMAAL_RAW="https://raw.githubusercontent.com/${CMAAL_REPO}/${CMAAL_BRANCH}"
+
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/cmaal"
+CONFIG_FILE="$CONFIG_DIR/config"
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/cmaal"
+
+# System files, overridable so the test suite can use fakes
+PACMAN_LOG="${CMAAL_PACMAN_LOG:-/var/log/pacman.log}"
+PACMAN_CONF="${CMAAL_PACMAN_CONF:-/etc/pacman.conf}"
+MIRRORLIST="${CMAAL_MIRRORLIST:-/etc/pacman.d/mirrorlist}"
+PACMAN_LOCK="${CMAAL_PACMAN_LOCK:-/var/lib/pacman/db.lck}"
+PACMAN_SYNC="${CMAAL_PACMAN_SYNC:-/var/lib/pacman/sync}"
+
+if [[ ! -r $CMAAL_LIB/core.sh ]]; then
+    printf 'cmaal: cannot find its modules in %s\n' "$CMAAL_LIB" >&2
+    printf 'Reinstall with: curl -fsSL %s/install.sh | bash\n' "$CMAAL_RAW" >&2
+    exit 1
+fi
+
+# core first: it loads the config and defines the helpers everything uses
+# shellcheck source=../lib/core.sh
+source "$CMAAL_LIB/core.sh"
+for _module in "$CMAAL_LIB"/*.sh; do
+    [[ $_module == */core.sh ]] && continue
+    # shellcheck source=/dev/null
+    source "$_module"
+done
+unset _module
+
+main() {
+    local cmd=${1:-}
+    [[ $# -gt 0 ]] && shift
+
+    case $cmd in
+        ""|-h|--help|help) usage "$@"; return ;;
+        -V|--version|version) cmd_version; return 0 ;;
+        self-update|--self-update|selfupdate) cmd_self_update "$@"; return ;;
+        __preview) cmd_preview "$@"; return ;;
+    esac
+
+    auto_update_check
+
+    # --noconfirm is kept for package commands (pacman understands it)
+    # and stripped for everything else
+    local a
+    local -a plain=()
+    for a in "$@"; do
+        if [[ $a == --noconfirm ]]; then CMAAL_YES=1; else plain+=("$a"); fi
+    done
+
+    case $cmd in
+        # packages
+        -S|install|in)              cmd_install "$@" ;;
+        -Ss|search|s|find)          cmd_search "$@" ;;
+        -Si|pkginfo)                cmd_pkginfo "$@" ;;
+        -Syu|-Syyu|-Su|-Suy|-Syuu)  cmd_upgrade "$cmd" "$@" ;;
+        upgrade|update|up)          cmd_upgrade -Syu "$@" ;;
+        -Sy)
+            if (( $# )); then
+                as_root pacman -Sy && cmd_install "$@"
+            else
+                as_root pacman -Sy
+            fi
+            ;;
+        remove|rm|uninstall-pkg)
+            if has_targets "$@"; then passthrough -Rns "$@"; else cmd_pick_remove -Rns "$@"; fi ;;
+        -R*)
+            if has_targets "$@"; then passthrough "$cmd" "$@"; else cmd_pick_remove "$cmd" "$@"; fi ;;
+        updates|outdated)           cmd_updates "${plain[@]}" ;;
+        pkgbuild)                   cmd_pkgbuild "${plain[@]}" ;;
+        why)                        cmd_why "${plain[@]}" ;;
+        files)                      cmd_files "${plain[@]}" ;;
+        provides|whatprovides)      cmd_provides "${plain[@]}" ;;
+        owns|who|which)             cmd_owns "${plain[@]}" ;;
+        hold|lock)                  cmd_hold "${plain[@]}" ;;
+        unhold|unlock)              cmd_unhold "${plain[@]}" ;;
+        holds|held)                 cmd_holds "${plain[@]}" ;;
+        orphans)                    cmd_orphans "${plain[@]}" ;;
+        big|size|sizes)             cmd_big "${plain[@]}" ;;
+        helper)                     cmd_helper "${plain[@]}" ;;
+
+        # rollback
+        undo)                       cmd_undo "${plain[@]}" ;;
+        downgrade|down)             cmd_downgrade "${plain[@]}" ;;
+        snapshot|snap)              cmd_snapshot "${plain[@]}" ;;
+        pkglist|packages)           cmd_pkglist "${plain[@]}" ;;
+        history)                    cmd_history "${plain[@]}" ;;
+
+        # system
+        clean|cleanup)              cmd_clean "${plain[@]}" ;;
+        mirrors|mirror)             cmd_mirrors "${plain[@]}" ;;
+        fix|repair)                 cmd_fix "${plain[@]}" ;;
+        news)                       cmd_news "${plain[@]}" ;;
+        services|service|svc)       cmd_services "${plain[@]}" ;;
+        logs|log|journal)           cmd_logs "${plain[@]}" ;;
+        kernel|kernels)             cmd_kernel "${plain[@]}" ;;
+        disk|df)                    cmd_disk "${plain[@]}" ;;
+        ports)                      cmd_ports "${plain[@]}" ;;
+        ip|myip)                    cmd_ip "${plain[@]}" ;;
+        sys|sysinfo|info)           cmd_sys "${plain[@]}" ;;
+        doctor|check)               cmd_doctor "${plain[@]}" ;;
+
+        # ssh / kitty / fun
+        ssh)                        cmd_ssh "${plain[@]}" ;;
+        theme|themes)               cmd_theme "${plain[@]}" ;;
+        weather|wttr)               cmd_weather "${plain[@]}" ;;
+        fetch|neofetch)             cmd_fetch "${plain[@]}" ;;
+
+        # cmaal itself
+        whatsnew|changelog)         cmd_whatsnew "${plain[@]}" ;;
+        config|conf)                cmd_config "${plain[@]}" ;;
+        uninstall)                  cmd_uninstall "${plain[@]}" ;;
+
+        -*)                         passthrough "$cmd" "$@" ;;
+        *)
+            warn "unknown command: $cmd"
+            printf 'Run %scmaal --help%s for a list of commands.\n' "$C_BOLD" "$C_RESET" >&2
+            return 1
+            ;;
+    esac
+}
+
+main "$@"

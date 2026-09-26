@@ -6,6 +6,7 @@ _cmaal() {
     local cmds="-S -Ss -Si -Sy -Syu -Syyu -R -Rns -Q -Qi -Ql -Qs
         install search remove upgrade ssh clean mirrors news history owns big sys
         undo downgrade snapshot fix pkglist services logs ports ip theme weather fetch
+        updates why files provides pkgbuild hold unhold holds orphans kernel disk whatsnew
         doctor helper config self-update uninstall help version --help --version"
 
     if (( COMP_CWORD == 1 )); then
@@ -16,7 +17,7 @@ _cmaal() {
     case $first in
         -S|-Si|-Sy|install)
             mapfile -t COMPREPLY < <(compgen -W "$(pacman -Slq 2>/dev/null)" -- "$cur") ;;
-        -R*|-Q*|remove|downgrade)
+        -R*|-Q*|remove|downgrade|why|files|hold)
             mapfile -t COMPREPLY < <(compgen -W "$(pacman -Qq 2>/dev/null)" -- "$cur") ;;
         ssh)
             local hosts=""
@@ -31,6 +32,11 @@ _cmaal() {
             fi
             ;;
         owns) mapfile -t COMPREPLY < <(compgen -c -- "$cur") ;;
+        pkgbuild) mapfile -t COMPREPLY < <(compgen -W "$(pacman -Slq 2>/dev/null)" -- "$cur") ;;
+        unhold) mapfile -t COMPREPLY < <(compgen -W "$(pacman-conf IgnorePkg 2>/dev/null)" -- "$cur") ;;
+        orphans) mapfile -t COMPREPLY < <(compgen -W "rm" -- "$cur") ;;
+        whatsnew) mapfile -t COMPREPLY < <(compgen -W "all" -- "$cur") ;;
+        help) mapfile -t COMPREPLY < <(compgen -W "packages rollback system ssh fun" -- "$cur") ;;
         snapshot) mapfile -t COMPREPLY < <(compgen -W "list create restore" -- "$cur") ;;
         pkglist)
             if (( COMP_CWORD == 2 )); then
