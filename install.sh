@@ -19,6 +19,9 @@ BRANCH="${CMAAL_BRANCH:-main}"
 RAW="https://raw.githubusercontent.com/${REPO}/${BRANCH}"
 TARBALL="https://github.com/${REPO}/archive/refs/heads/${BRANCH}.tar.gz"
 
+# Only the test suite sets this, to keep its fake old installs in a sandbox
+SYSROOT="${CMAAL_TEST_SYSROOT:-}"
+
 MODE="package"
 ACTION="install"
 YES=""
@@ -89,7 +92,7 @@ owned_by_pacman() { have pacman && pacman -Qqo -- "$1" >/dev/null 2>&1; }
 # They would shadow /usr/bin/cmaal (both come first in PATH).
 non_package_files() {
     local p f
-    for p in /usr/local "$HOME/.local"; do
+    for p in "$SYSROOT/usr/local" "$HOME/.local"; do
         for f in "$p/bin/cmaal" "$p/lib/cmaal" "$p/share/cmaal" "$p/share/doc/cmaal" \
                  "$p/share/licenses/cmaal" "$p/share/man/man1/cmaal.1" \
                  "$p/share/bash-completion/completions/cmaal" "$p/share/zsh/site-functions/_cmaal" \
@@ -98,8 +101,8 @@ non_package_files() {
         done
     done
     # 0.1/0.2 system installs put completions straight into /usr/share
-    for f in /usr/share/bash-completion/completions/cmaal /usr/share/zsh/site-functions/_cmaal \
-             /usr/share/fish/vendor_completions.d/cmaal.fish "$HOME/.config/fish/completions/cmaal.fish"; do
+    for f in "$SYSROOT"/usr/share/bash-completion/completions/cmaal "$SYSROOT"/usr/share/zsh/site-functions/_cmaal \
+             "$SYSROOT"/usr/share/fish/vendor_completions.d/cmaal.fish "$HOME/.config/fish/completions/cmaal.fish"; do
         [[ -e $f ]] && ! owned_by_pacman "$f" && printf '%s\n' "$f"
     done
     return 0

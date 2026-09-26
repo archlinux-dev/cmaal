@@ -35,6 +35,8 @@ setup() {
     export MOCK_LOG="$t/log" MOCK_CACHE="$t/cache"
     export CMAAL_PACMAN_LOG="$t/pacman.log" CMAAL_PACMAN_CONF="$t/pacman.conf"
     export CMAAL_MIRRORLIST="$t/mirrorlist" CMAAL_PACMAN_LOCK="$t/db.lck" CMAAL_PACMAN_SYNC="$t/sync"
+    # the installer must never look at the real /usr during tests
+    export CMAAL_TEST_SYSROOT="$t/sysroot"
     unset MOCK_FZF_PICK MOCK_REMOTE_VERSION CMAAL_ASSUME_YES TERM_PROGRAM
     export TERM=dumb
     : >"$MOCK_LOG"
@@ -467,6 +469,10 @@ if test_case "install.sh package mode"; then
     else
         mkdir -p "$HOME/.local/bin"
         printf '#!/bin/bash\nCMAAL_VERSION="0.2.0"\n' >"$HOME/.local/bin/cmaal"
+        # an old 0.2 system install: binary in /usr/local, completion in /usr/share
+        mkdir -p "$T/sysroot/usr/local/bin" "$T/sysroot/usr/share/bash-completion/completions"
+        echo old >"$T/sysroot/usr/local/bin/cmaal"
+        echo old >"$T/sysroot/usr/share/bash-completion/completions/cmaal"
         export MOCK_MAKEPKG_FAIL=1
         OUT=$(bash "$ROOT/install.sh" --yes 2>&1 </dev/null)
         out_has "nothing was changed"
@@ -477,6 +483,9 @@ if test_case "install.sh package mode"; then
         log_has "makepkg-source cmaal::git+file://$ROOT#"
         log_has "pacman -U --noconfirm --"
         if [[ ! -e $HOME/.local/bin/cmaal ]]; then pass "old ~/.local/bin/cmaal removed"; else fail "old copy still there"; fi
+        if [[ ! -e $T/sysroot/usr/local/bin/cmaal ]]; then pass "old /usr/local/bin/cmaal removed"; else fail "old /usr/local copy still there"; fi
+        if [[ ! -e $T/sysroot/usr/share/bash-completion/completions/cmaal ]]; then pass "old completion removed"; else fail "old completion still there"; fi
+        if ! grep -q ' /usr/' "$MOCK_LOG"; then pass "never touched the real /usr"; else fail "touched the real /usr"; fi
     fi
 fi
 
