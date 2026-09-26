@@ -3,7 +3,7 @@
 # Builds cmaal from git. install.sh and `cmaal self-update` use this file.
 # Build it yourself with:  makepkg -si
 #
-# CMAAL_SOURCE / CMAAL_BRANCH / CMAAL_REPO let the installer build a local
+# CMAAL_SOURCE / CMAAL_BRANCH / CMAAL_GITREF / CMAAL_REPO let the installer build a local
 # checkout or another branch; normally you don't need them.
 
 pkgname=cmaal
@@ -32,7 +32,8 @@ optdepends=(
     'bat: syntax highlighting in cmaal pkgbuild'
 )
 _repo=${CMAAL_REPO:-archlinux-dev/cmaal}
-source=("$pkgname::${CMAAL_SOURCE:-git+https://github.com/$_repo.git}#branch=${CMAAL_BRANCH:-main}")
+# CMAAL_GITREF can pin an exact commit (commit=<sha>), otherwise the branch is used
+source=("$pkgname::${CMAAL_SOURCE:-git+https://github.com/$_repo.git}#${CMAAL_GITREF:-branch=${CMAAL_BRANCH:-main}}")
 sha256sums=('SKIP')
 
 pkgver() {

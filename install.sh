@@ -165,9 +165,15 @@ install_package() {
         cp "$SRC_DIR/packaging/PKGBUILD" "$TMP/PKGBUILD"
         export CMAAL_SOURCE="git+file://$SRC_DIR"
         CMAAL_BRANCH=$(git -C "$SRC_DIR" rev-parse --abbrev-ref HEAD)
-        [[ $CMAAL_BRANCH != HEAD ]] || die "your checkout is not on a branch, run: git switch main"
-        export CMAAL_BRANCH
-        msg "  from your local checkout ($CMAAL_BRANCH, committed changes only)"
+        if [[ $CMAAL_BRANCH == HEAD ]]; then
+            # detached checkout (a tag, a CI run): build exactly this commit
+            CMAAL_GITREF="commit=$(git -C "$SRC_DIR" rev-parse HEAD)"
+            export CMAAL_GITREF
+            msg "  from your local checkout (commit ${CMAAL_GITREF#commit=}, committed changes only)"
+        else
+            export CMAAL_BRANCH
+            msg "  from your local checkout ($CMAAL_BRANCH, committed changes only)"
+        fi
     else
         have curl || die "curl is required"
         curl -fsSL --max-time 30 "$RAW/packaging/PKGBUILD" -o "$TMP/PKGBUILD" || die "could not download the PKGBUILD"

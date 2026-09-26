@@ -470,6 +470,7 @@ if test_case "install.sh package mode"; then
         unset MOCK_MAKEPKG_FAIL
         OUT=$(bash "$ROOT/install.sh" --yes 2>&1 </dev/null)
         log_has "makepkg -s --clean --force --noconfirm"
+        log_has "makepkg-source cmaal::git+file://$ROOT#"
         log_has "pacman -U --noconfirm --"
         if [[ ! -e $HOME/.local/bin/cmaal ]]; then pass "old ~/.local/bin/cmaal removed"; else fail "old copy still there"; fi
     fi
