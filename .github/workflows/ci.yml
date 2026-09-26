@@ -29,6 +29,9 @@ jobs:
     steps:
       - name: prepare Arch
         run: |
+          # the docker image skips docs and man pages (NoExtract); a real
+          # install doesn't, so behave like one
+          sed -i '/^NoExtract/d' /etc/pacman.conf
           pacman -Syu --noconfirm --needed git make namcap man-db
           useradd -m builder
           echo 'builder ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/builder

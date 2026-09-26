@@ -130,8 +130,12 @@ cmd_version() {
 # What's new: the CHANGELOG.md section for a version
 # ---------------------------------------------------------------------------
 cmd_whatsnew() {
-    local want=${1:-$CMAAL_VERSION} file="$CMAAL_DOC/CHANGELOG.md"
-    [[ -r $file ]] || die "changelog not found ($file)"
+    local want=${1:-$CMAAL_VERSION} file="" f
+    # installed: /usr/share/cmaal, git checkout: the repo root
+    for f in "$CMAAL_SHARE/CHANGELOG.md" "$CMAAL_DOC/CHANGELOG.md"; do
+        [[ -r $f ]] && { file=$f; break; }
+    done
+    [[ -n $file ]] || die "changelog not found in $CMAAL_SHARE"
     if [[ $want == all ]]; then
         page <"$file"
         return

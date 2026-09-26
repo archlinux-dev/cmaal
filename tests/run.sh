@@ -424,7 +424,7 @@ fi
 if test_case "make install"; then
     if have_make=$(command -v make); then
         make -s -C "$ROOT" install DESTDIR="$T/root" PREFIX=/usr >/dev/null
-        for f in usr/bin/cmaal usr/lib/cmaal/core.sh usr/share/cmaal/config.default usr/share/man/man1/cmaal.1 \
+        for f in usr/bin/cmaal usr/lib/cmaal/core.sh usr/share/cmaal/config.default usr/share/cmaal/CHANGELOG.md usr/share/man/man1/cmaal.1 \
                  usr/share/doc/cmaal/CHANGELOG.md usr/share/bash-completion/completions/cmaal \
                  usr/share/zsh/site-functions/_cmaal usr/share/fish/vendor_completions.d/cmaal.fish \
                  usr/share/licenses/cmaal/LICENSE; do
@@ -436,6 +436,10 @@ if test_case "make install"; then
         make -s -C "$ROOT" install PREFIX="$T/prefix" >/dev/null
         OUT=$("$T/prefix/bin/cmaal" --version 2>&1)
         out_has "(manual install)"
+        OUT=$("$T/prefix/bin/cmaal" whatsnew 2>&1)
+        out_has "What's new"
+        # docs can be skipped by pacman's NoExtract, whatsnew must not care
+        rm -rf "$T/prefix/share/doc"
         OUT=$("$T/prefix/bin/cmaal" whatsnew 2>&1)
         out_has "What's new"
     else

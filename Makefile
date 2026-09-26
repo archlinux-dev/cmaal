@@ -37,6 +37,8 @@ install:
 	install -m644 lib/*.sh "$(DESTDIR)$(LIBDIR)/"
 	install -Dm644 share/config.default "$(DESTDIR)$(SHAREDIR)/config.default"
 	install -Dm644 share/logo.txt "$(DESTDIR)$(SHAREDIR)/logo.txt"
+	# whatsnew reads this at runtime; /usr/share/doc may be NoExtract
+	install -Dm644 CHANGELOG.md "$(DESTDIR)$(SHAREDIR)/CHANGELOG.md"
 	install -Dm644 man/cmaal.1 "$(DESTDIR)$(MANDIR)/cmaal.1"
 	sed -i 's|@VERSION@|$(VERSION)|' "$(DESTDIR)$(MANDIR)/cmaal.1"
 	install -Dm644 completions/cmaal.bash "$(DESTDIR)$(BASHCOMPDIR)/cmaal"
