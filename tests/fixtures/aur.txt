@@ -1,3 +1,4 @@
-visual-studio-code-bin 1.93.0-1
-yay-bin 12.3.5-1
-spotify-launcher 0.5.4-1
+visual-studio-code-bin 1.93.0-1 1500 dcelasun - 3 2000
+yay-bin 12.3.5-1 900 jguer - 10 1500
+spotify-launcher 0.5.4-1 40 - 30 60 700
+fresh-miner 0.0.1-1 1 someone - 2 3

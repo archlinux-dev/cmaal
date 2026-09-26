@@ -1,12 +1,19 @@
 # bash completion for cmaal
 
+_cmaal_plugins() {
+    find ~/.config/cmaal/plugins -maxdepth 1 -name '*.sh' -printf '%f\n' 2>/dev/null | sed 's/\.sh$//'
+}
+
 _cmaal() {
     local cur=${COMP_WORDS[COMP_CWORD]}
     local first=${COMP_WORDS[1]:-}
-    local cmds="-S -Ss -Si -Sy -Syu -Syyu -R -Rns -Q -Qi -Ql -Qs
+    local cmds
+    cmds="-S -Ss -Si -Sy -Syu -Syyu -R -Rns -Q -Qi -Ql -Qs
         install search remove upgrade ssh clean mirrors news history owns big sys
         undo downgrade snapshot fix pkglist services logs ports ip theme weather fetch
         updates why files provides pkgbuild hold unhold holds orphans kernel disk whatsnew
+        review alerts wifi bluetooth drivers gaming rescue backup plugins
+        $(_cmaal_plugins)
         doctor helper config self-update uninstall help version --help --version"
 
     if (( COMP_CWORD == 1 )); then
@@ -52,6 +59,24 @@ _cmaal() {
                 mapfile -t COMPREPLY < <(compgen -W "$extra $(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk '{ sub(/\.service$/, "", $1); print $1 }')" -- "$cur")
             elif [[ $first == services ]]; then
                 mapfile -t COMPREPLY < <(compgen -W "status start stop restart enable disable logs" -- "$cur")
+            fi
+            ;;
+        review) mapfile -t COMPREPLY < <(compgen -W "$(pacman -Qqm 2>/dev/null)" -- "$cur") ;;
+        alerts) mapfile -t COMPREPLY < <(compgen -W "on off now status" -- "$cur") ;;
+        wifi) mapfile -t COMPREPLY < <(compgen -W "connect list status on off forget share" -- "$cur") ;;
+        bluetooth) mapfile -t COMPREPLY < <(compgen -W "status on off pair connect disconnect remove" -- "$cur") ;;
+        backup)
+            if (( COMP_CWORD == 2 )); then
+                mapfile -t COMPREPLY < <(compgen -W "init add rm list log restore" -- "$cur")
+            else
+                mapfile -t COMPREPLY < <(compgen -f -- "$cur")
+            fi
+            ;;
+        plugins)
+            if (( COMP_CWORD == 2 )); then
+                mapfile -t COMPREPLY < <(compgen -W "list new edit rm dir" -- "$cur")
+            else
+                mapfile -t COMPREPLY < <(compgen -W "$(_cmaal_plugins)" -- "$cur")
             fi
             ;;
         helper) mapfile -t COMPREPLY < <(compgen -W "status install yay paru" -- "$cur") ;;

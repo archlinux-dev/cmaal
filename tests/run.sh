@@ -421,12 +421,263 @@ if test_case "update notice"; then
 fi
 
 # ---------------------------------------------------------------------------
+# 1.0: plugins
+# ---------------------------------------------------------------------------
+if test_case "plugins"; then
+    run plugins
+    out_has "No plugins yet"
+    run plugins new hello-world
+    file_has "$HOME/.config/cmaal/plugins/hello-world.sh" "plugin_hello_world()"
+    run hello-world one two
+    out_has "You passed: one two"
+    run plugins
+    out_has "hello-world"
+    run help
+    out_has "PLUGINS"
+    run plugins new wifi
+    rc_is 1
+    out_has "already a cmaal command"
+    run plugins new Bad_Name
+    rc_is 1
+fi
+
+if test_case "plugins: broken plugin and hooks"; then
+    mkdir -p "$HOME/.config/cmaal/plugins"
+    echo 'this is ( not bash' >"$HOME/.config/cmaal/plugins/broken.sh"
+    cat >"$HOME/.config/cmaal/plugins/after.sh" <<'EOP'
+PLUGIN_DESC="says hi after upgrades"
+plugin_after() { echo "after ran"; }
+after_hook() { echo "HOOK: upgrade finished"; }
+cmaal_on post_upgrade after_hook
+EOP
+    run --version
+    out_has "skipping plugin"
+    rc_is 0
+    run -Syu --noconfirm
+    out_has "HOOK: upgrade finished"
+    run nosuchcmd
+    rc_is 1
+fi
+
+# ---------------------------------------------------------------------------
+# 1.0: German
+# ---------------------------------------------------------------------------
+if test_case "german"; then
+    OUT=$(LANG=de_AT.UTF-8 "$CMAAL" help 2>&1)
+    out_has "PAKETE"
+    out_has "ein Multitool für Arch Linux"
+    OUT=$(LANG=de_AT.UTF-8 "$CMAAL" -S nosuchpkg 2>&1 </dev/null)
+    out_has "Suche 1 Paket(e)..."
+    out_has "nicht gefunden"
+    OUT=$(LANG=de_AT.UTF-8 "$CMAAL" kaputt 2>&1)
+    out_has "unbekannter Befehl: kaputt"
+    mkdir -p "$HOME/.config/cmaal"
+    echo 'LANGUAGE_UI="en"' >"$HOME/.config/cmaal/config"
+    OUT=$(LANG=de_AT.UTF-8 "$CMAAL" kaputt 2>&1)
+    out_has "unknown command: kaputt"
+    OUT=$(LANG=en_US.UTF-8 "$CMAAL" help 2>&1)
+    out_has "PACKAGES"
+fi
+
+if test_case "german catalog is sane"; then
+    bad=$(awk -F'\t' '!/^#/ && NF && NF != 2' "$ROOT/share/i18n/de.txt")
+    if [[ -z $bad ]]; then pass "every line is English<TAB>German"; else OUT=$bad; fail "malformed lines"; fi
+    bad=$(awk -F'\t' '!/^#/ && NF == 2 { a = gsub(/%s/, "", $1); b = gsub(/%s/, "", $2); if (a != b) print }' "$ROOT/share/i18n/de.txt")
+    if [[ -z $bad ]]; then pass "placeholders match"; else OUT=$bad; fail "placeholder count differs"; fi
+fi
+
+# ---------------------------------------------------------------------------
+# 1.0: AUR safety
+# ---------------------------------------------------------------------------
+if test_case "review cards"; then
+    run review spotify-launcher --noconfirm
+    out_has "maintainer: none"
+    out_has "orphaned"
+    out_has "flagged out of date 30 days ago"
+    run review fresh-miner --noconfirm
+    out_has "brand new with almost no votes"
+    run review visual-studio-code-bin --noconfirm
+    out_lacks "!"
+    run review notonaur --noconfirm
+    rc_is 1
+fi
+
+if test_case "review: all installed AUR packages"; then
+    run review
+    out_has "spotify-launcher"
+    out_has "orphaned (no maintainer)"
+    out_has "ghostpkg"
+    out_has "not in the AUR anymore"
+    out_lacks "yay-bin "
+fi
+
+if test_case "AUR install check and PKGBUILD changes"; then
+    run -S fresh-miner --noconfirm
+    out_has "AUR check"
+    out_has "brand new"
+    log_has "yay -S --noconfirm -- fresh-miner"
+    file_has "$HOME/.cache/cmaal/pkgbuilds/fresh-miner.PKGBUILD" "fresh-miner.tar.gz"
+    # the AUR PKGBUILD changes: cmaal should notice
+    mkdir -p "$T/pkgbuilds"
+    printf 'pkgname=fresh-miner\npkgver=2.0\nsource=(https://evil.example/miner.sh)\n' >"$T/pkgbuilds/fresh-miner"
+    export MOCK_PKGBUILDS="$T/pkgbuilds"
+    cp "$HOME/.cache/cmaal/pkgbuilds/fresh-miner.PKGBUILD" "$T/installed.PKGBUILD"
+    run review fresh-miner --noconfirm
+    out_has "What changed since you installed it"
+    out_has "+source=(https://evil.example/miner.sh)"
+    # review marked it as seen; put the old one back to test the install warning
+    cp "$T/installed.PKGBUILD" "$HOME/.cache/cmaal/pkgbuilds/fresh-miner.PKGBUILD"
+    run -S fresh-miner --noconfirm
+    out_has "PKGBUILD changed since you last installed it"
+    unset MOCK_PKGBUILDS
+fi
+
+if test_case "AUR check can be turned off"; then
+    mkdir -p "$HOME/.config/cmaal"
+    echo 'AUR_CHECK="no"' >"$HOME/.config/cmaal/config"
+    run -S fresh-miner --noconfirm
+    out_lacks "AUR check"
+    log_has "yay -S --noconfirm -- fresh-miner"
+fi
+
+# ---------------------------------------------------------------------------
+# 1.0: alerts
+# ---------------------------------------------------------------------------
+if test_case "alerts"; then
+    mkdir -p "$HOME/.cache/cmaal"
+    echo "Older news" >"$HOME/.cache/cmaal/news_seen"
+    run alerts now
+    out_has "2 updates (1 AUR)"
+    out_has "1 unread Arch news"
+    run alerts on
+    file_has "$HOME/.config/systemd/user/cmaal-alerts.timer" "OnUnitActiveSec=6h"
+    file_has "$HOME/.config/systemd/user/cmaal-alerts.service" "__alert-check"
+    log_has "systemctl --user enable --now cmaal-alerts.timer"
+    : >"$MOCK_LOG"
+    run __alert-check
+    run __alert-check
+    if [[ $(grep -c '^notify-send' "$MOCK_LOG") == 0 ]]; then pass "no repeat notification for the same news"; else fail "notified twice"; fi
+    rm -f "$HOME/.cache/cmaal/alerts_notified"
+    run __alert-check
+    log_has "notify-send --app-name=cmaal"
+    run alerts off
+    if [[ ! -e $HOME/.config/systemd/user/cmaal-alerts.timer ]]; then pass "timer removed"; else fail "timer still there"; fi
+fi
+
+# ---------------------------------------------------------------------------
+# 1.0: desktop
+# ---------------------------------------------------------------------------
+if test_case "wifi"; then
+    run wifi list
+    out_has "Cafe:Guest"
+    out_has "HomeNet"
+    if [[ $(grep -c HomeNet <<<"$OUT") == 1 ]]; then pass "duplicate networks merged"; else fail "HomeNet listed twice"; fi
+    export MOCK_FZF_PICK='Cafe'
+    run wifi
+    log_has "nmcli --ask dev wifi connect Cafe:Guest"
+    run wifi connect Neighbor
+    log_has "nmcli --ask dev wifi connect Neighbor"
+    run wifi share
+    out_has "hunter22"
+    run wifi off
+    log_has "nmcli radio wifi off"
+fi
+
+if test_case "bluetooth"; then
+    run bluetooth
+    out_has "WH-1000XM4"
+    out_has "connected"
+    out_has "MX Keys"
+    export MOCK_FZF_PICK='MX Keys'
+    run bluetooth connect
+    log_has "bluetoothctl connect AA:BB:CC:DD:EE:02"
+    export MOCK_FZF_PICK='New Speaker'
+    run bluetooth pair
+    log_has "bluetoothctl pair AA:BB:CC:DD:EE:03"
+    log_has "bluetoothctl trust AA:BB:CC:DD:EE:03"
+fi
+
+if test_case "drivers"; then
+    run drivers --noconfirm
+    out_has "AMD"
+    out_has "missing: mesa vulkan-radeon"
+    out_has "Intel SOF"
+    log_has "pacman -S --needed --"
+    log_has "vulkan-radeon"
+fi
+
+if test_case "gaming"; then
+    run gaming --noconfirm
+    file_has "$T/pacman.conf" "[multilib]"
+    file_has "$T/pacman.conf.cmaal.bak" "#[multilib]"
+    log_has "pacman -Syu"
+    log_has "pacman -S --needed -- steam gamemode lib32-gamemode mangohud lib32-mangohud lib32-mesa vulkan-radeon lib32-vulkan-radeon"
+    log_lacks "lutris"
+    run gaming --noconfirm
+    out_has "multilib is enabled"
+fi
+
+# ---------------------------------------------------------------------------
+# 1.0: rescue and backup
+# ---------------------------------------------------------------------------
+if test_case "rescue on the running system"; then
+    touch "$T/db.lck"
+    export MOCK_FZF_PICK='stuck pacman lock'
+    run rescue --noconfirm
+    if [[ ! -e $T/db.lck ]]; then pass "removed the (sandboxed) lock"; else fail "lock still there"; fi
+    log_lacks "/var/lib/pacman/db.lck"
+fi
+
+if test_case "rescue from the USB stick"; then
+    mkdir -p "$T/mnt/etc"
+    echo "UUID=abc / ext4 defaults 0 1" >"$T/mnt/etc/fstab"
+    export CMAAL_FORCE_LIVE=1 CMAAL_RESCUE_MNT="$T/mnt" MOCK_MOUNTED="$T/mnt" MOCK_FZF_PICK='kernel'
+    run rescue --noconfirm
+    out_has "already mounted"
+    log_has "arch-chroot $T/mnt pacman -S --noconfirm linux"
+    log_has "arch-chroot $T/mnt mkinitcpio -P"
+    log_has "umount -R $T/mnt"
+    unset CMAAL_FORCE_LIVE CMAAL_RESCUE_MNT MOCK_MOUNTED
+fi
+
+if test_case "backup"; then
+    if command -v git >/dev/null; then
+        mkdir -p "$HOME/.config/kitty" "$HOME/.ssh"
+        echo "font_size 12" >"$HOME/.config/kitty/kitty.conf"
+        echo "PRIVATE KEY" >"$HOME/.ssh/id_ed25519"
+        echo "Host pi" >"$HOME/.ssh/config"
+        echo "tok" >"$HOME/.config/kitty/api_token"
+        run backup
+        rc_is 1
+        run backup init
+        run backup
+        out_has "backup saved"
+        repo="$HOME/.local/share/cmaal/backup"
+        file_has "$repo/home/.config/kitty/kitty.conf" "font_size 12"
+        file_has "$repo/home/.ssh/config" "Host pi"
+        if ! grep -rq "PRIVATE KEY" "$repo"; then pass "private key never copied"; else fail "PRIVATE KEY LEAKED INTO BACKUP"; fi
+        if [[ ! -e $repo/home/.config/kitty/api_token ]]; then pass "token file skipped"; else fail "token file copied"; fi
+        run backup
+        out_has "nothing changed"
+        run backup add "$HOME/.ssh"
+        rc_is 1
+        echo "font_size 99" >"$HOME/.config/kitty/kitty.conf"
+        export CMAAL_ASSUME_YES=1
+        run backup restore kitty
+        file_has "$HOME/.config/kitty/kitty.conf" "font_size 12"
+        file_has "$HOME/.config/kitty/kitty.conf.cmaal-old" "font_size 99"
+    else
+        skip "git not installed"
+    fi
+fi
+
+# ---------------------------------------------------------------------------
 # packaging
 # ---------------------------------------------------------------------------
 if test_case "make install"; then
     if have_make=$(command -v make); then
         make -s -C "$ROOT" install DESTDIR="$T/root" PREFIX=/usr >/dev/null
-        for f in usr/bin/cmaal usr/lib/cmaal/core.sh usr/share/cmaal/config.default usr/share/cmaal/CHANGELOG.md usr/share/man/man1/cmaal.1 \
+        for f in usr/bin/cmaal usr/lib/cmaal/core.sh usr/share/cmaal/config.default usr/share/cmaal/CHANGELOG.md usr/share/cmaal/i18n/de.txt usr/share/cmaal/i18n/help.de.txt usr/share/man/man1/cmaal.1 \
                  usr/share/doc/cmaal/CHANGELOG.md usr/share/bash-completion/completions/cmaal \
                  usr/share/zsh/site-functions/_cmaal usr/share/fish/vendor_completions.d/cmaal.fish \
                  usr/share/licenses/cmaal/LICENSE; do
@@ -438,6 +689,8 @@ if test_case "make install"; then
         make -s -C "$ROOT" install PREFIX="$T/prefix" >/dev/null
         OUT=$("$T/prefix/bin/cmaal" --version 2>&1)
         out_has "(manual install)"
+        OUT=$(LANG=de_AT.UTF-8 "$T/prefix/bin/cmaal" help 2>&1)
+        out_has "PAKETE"
         OUT=$("$T/prefix/bin/cmaal" whatsnew 2>&1)
         out_has "What's new"
         # docs can be skipped by pacman's NoExtract, whatsnew must not care

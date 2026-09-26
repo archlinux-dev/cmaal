@@ -22,7 +22,7 @@ BASHCOMPDIR = $(PREFIX)/share/bash-completion/completions
 ZSHCOMPDIR  = $(PREFIX)/share/zsh/site-functions
 FISHCOMPDIR = $(PREFIX)/share/fish/vendor_completions.d
 
-SHELL_FILES = bin/cmaal lib/*.sh install.sh tests/run.sh completions/cmaal.bash
+SHELL_FILES = bin/cmaal lib/*.sh install.sh tests/run.sh completions/cmaal.bash packaging/aur/publish.sh
 
 .PHONY: all install uninstall test lint check
 
@@ -37,6 +37,8 @@ install:
 	install -m644 lib/*.sh "$(DESTDIR)$(LIBDIR)/"
 	install -Dm644 share/config.default "$(DESTDIR)$(SHAREDIR)/config.default"
 	install -Dm644 share/logo.txt "$(DESTDIR)$(SHAREDIR)/logo.txt"
+	install -dm755 "$(DESTDIR)$(SHAREDIR)/i18n"
+	install -m644 share/i18n/* "$(DESTDIR)$(SHAREDIR)/i18n/"
 	# whatsnew reads this at runtime; /usr/share/doc may be NoExtract
 	install -Dm644 CHANGELOG.md "$(DESTDIR)$(SHAREDIR)/CHANGELOG.md"
 	install -Dm644 man/cmaal.1 "$(DESTDIR)$(MANDIR)/cmaal.1"

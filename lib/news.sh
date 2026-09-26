@@ -30,34 +30,50 @@ cmd_news() {
     (( ${#items[@]} )) || die "could not fetch Arch news"
     section "Arch Linux news"
     for line in "${items[@]}"; do
-        IFS=$'\t' read -r d t l <<<"$line"
-        printf '   %s%s%s  %s%s%s\n      %s%s%s\n' "$C_DIM" "$d" "$C_RESET" "$C_BOLD" "$t" "$C_RESET" "$C_DIM" "$l" "$C_RESET"
+        IFS=$'\t' read -r d title l <<<"$line"
+        printf '   %s%s%s  %s%s%s\n      %s%s%s\n' "$C_DIM" "$d" "$C_RESET" "$C_BOLD" "$title" "$C_RESET" "$C_DIM" "$l" "$C_RESET"
     done
     mkdir -p "$CACHE_DIR"
     printf '%s\n' "${items[0]}" | cut -f2 >"$CACHE_DIR/news_seen"
 }
 
 # Shows news posted since the last time we looked. Returns 1 if the user aborts.
-check_news_before_upgrade() {
-    [[ $SHOW_NEWS_ON_UPGRADE == yes ]] && have curl || return 0
+# unread_news -> news lines newer than the last one you saw (does not mark them)
+unread_news() {
     local seen="" line
-    local -a items=() unread=()
+    local -a items=()
     [[ -f $CACHE_DIR/news_seen ]] && seen=$(<"$CACHE_DIR/news_seen")
+    [[ -n $seen ]] || return 0
     mapfile -t items < <(news_items 5)
-    (( ${#items[@]} )) || return 0
     for line in "${items[@]}"; do
         [[ $(cut -f2 <<<"$line") == "$seen" ]] && break
-        unread+=("$line")
+        printf '%s\n' "$line"
     done
+}
+
+mark_news_seen() {
+    local newest
+    newest=$(news_items 1 | cut -f2)
+    [[ -n $newest ]] || return 0
     mkdir -p "$CACHE_DIR"
-    cut -f2 <<<"${items[0]}" >"$CACHE_DIR/news_seen"
+    printf '%s\n' "$newest" >"$CACHE_DIR/news_seen"
+}
+
+# Shows news posted since the last time we looked. Returns 1 if the user aborts.
+check_news_before_upgrade() {
+    [[ $SHOW_NEWS_ON_UPGRADE == yes ]] && have curl || return 0
+    local line d title l first=""
+    local -a unread=()
+    [[ -f $CACHE_DIR/news_seen ]] || first=1
+    mapfile -t unread < <(unread_news)
+    mark_news_seen
     # first run: remember the newest item quietly
-    [[ -z $seen ]] && return 0
+    [[ -z $first ]] || return 0
     (( ${#unread[@]} )) || return 0
     section "Unread Arch news (read before upgrading!)"
     for line in "${unread[@]}"; do
-        IFS=$'\t' read -r d t l <<<"$line"
-        printf '   %s%s%s  %s%s%s\n      %s\n' "$C_DIM" "$d" "$C_RESET" "$C_YELLOW$C_BOLD" "$t" "$C_RESET" "$l"
+        IFS=$'\t' read -r d title l <<<"$line"
+        printf '   %s%s%s  %s%s%s\n      %s\n' "$C_DIM" "$d" "$C_RESET" "$C_YELLOW$C_BOLD" "$title" "$C_RESET" "$l"
     done
     printf '\n'
     ask "Continue with the upgrade?" y

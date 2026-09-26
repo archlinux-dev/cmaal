@@ -2,6 +2,23 @@
 
 All notable changes to cmaal. `cmaal whatsnew` shows the entry for your installed version.
 
+## 1.0.0
+
+The first big release. From here on: small updates are 1.1, 1.2, ..., big ones 2.0.
+
+- **Plugins:** your own commands. `cmaal plugins new <name>` makes one in `~/.config/cmaal/plugins`, it runs as `cmaal <name>`. Plugins can also hook into upgrades and installs (`cmaal_on post_upgrade ...`).
+- **German:** cmaal speaks German when your system does (`LANG=de_*`): full help and most messages, `j` works as yes. Force a language with `LANGUAGE_UI` in `cmaal config`.
+- **Safer AUR installs:** before installing from the AUR cmaal shows votes, maintainer and age, and warns about orphaned, out of date and brand new packages. It remembers each PKGBUILD and warns when it changes on an update.
+- **New:** `cmaal review <pkg>` shows an AUR package's card and what changed in its PKGBUILD; `cmaal review` checks every installed AUR package for problems.
+- **New:** `cmaal alerts on` checks for updates and unread Arch news in the background and sends a desktop notification (systemd user timer, no root).
+- **New:** `cmaal wifi` (pick, join, forget, share with a QR code) and `cmaal bluetooth` (pair, connect, disconnect).
+- **New:** `cmaal drivers` detects your CPU, GPU, Wi-Fi and audio hardware and installs what's missing.
+- **New:** `cmaal gaming` enables multilib and sets up Steam, Proton, GameMode, MangoHud and 32-bit drivers.
+- **New:** `cmaal rescue` guides you through fixing a system that won't boot, from the Arch USB stick or the running system: kernel, bootloader, pacman lock, passwords.
+- **New:** `cmaal backup` copies your config files and package list into a git repository. Private keys and other secrets are never included.
+- **AUR package:** `packaging/aur/cmaal-git` plus a publish script, so cmaal can be installed with `yay -S cmaal-git`.
+- CI now also tests `cmaal self-update` on real Arch.
+
 ## 0.3.0
 
 cmaal is a real pacman package now.

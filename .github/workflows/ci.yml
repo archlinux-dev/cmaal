@@ -10,9 +10,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: shellcheck
-        run: shellcheck bin/cmaal lib/*.sh install.sh cmaal tests/run.sh completions/cmaal.bash
+        run: shellcheck bin/cmaal lib/*.sh install.sh cmaal tests/run.sh completions/cmaal.bash packaging/aur/publish.sh
       - name: syntax
-        run: for f in bin/cmaal lib/*.sh install.sh cmaal tests/run.sh packaging/PKGBUILD; do bash -n "$f"; done
+        run: for f in bin/cmaal lib/*.sh install.sh cmaal tests/run.sh packaging/PKGBUILD packaging/aur/cmaal-git/PKGBUILD packaging/aur/publish.sh; do bash -n "$f"; done
       - name: versions match
         run: |
           v=$(tr -d '[:space:]' < VERSION)
@@ -65,6 +65,20 @@ jobs:
           sudo -u builder cmaal help hold
           sudo -u builder cmaal whatsnew
           man -w cmaal
+      - name: German, plugins and the AUR package on real Arch
+        run: |
+          sudo -u builder env LANG=de_DE.UTF-8 cmaal help | grep -q PAKETE
+          sudo -u builder cmaal plugins new ci-check
+          sudo -u builder cmaal ci-check hello | grep -q "You passed: hello"
+          # .SRCINFO must be exactly what makepkg generates, or the AUR rejects it
+          cd /home/builder/src/packaging/aur/cmaal-git
+          sudo -u builder makepkg --printsrcinfo | diff -u .SRCINFO -
+      - name: self-update rebuilds the installed package
+        run: |
+          branch="${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
+          sudo -u builder env CMAAL_YES=1 CMAAL_BRANCH="$branch" cmaal self-update --force
+          pacman -Qi cmaal | grep -q "^Version.*$(tr -d '[:space:]' < /home/builder/src/VERSION)"
+          sudo -u builder cmaal --version | grep -q '(package install)'
       - name: namcap
         run: |
           cd /home/builder/src/packaging

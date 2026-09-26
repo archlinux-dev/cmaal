@@ -59,6 +59,12 @@ for _module in "$CMAAL_LIB"/*.sh; do
     source "$_module"
 done
 unset _module
+load_plugins
+
+# is this one of cmaal's own commands? (read from main's case below)
+is_builtin_command() {
+    declare -f main | tr -d ' ' | grep -qE "^\(?([a-z0-9-]+\|)*$1(\|[a-z0-9-]+)*\)"
+}
 
 main() {
     local cmd=${1:-}
@@ -139,16 +145,36 @@ main() {
         weather|wttr)               cmd_weather "${plain[@]}" ;;
         fetch|neofetch)             cmd_fetch "${plain[@]}" ;;
 
+        # desktop
+        wifi|wlan)                  cmd_wifi "${plain[@]}" ;;
+        bluetooth|bt)               cmd_bluetooth "${plain[@]}" ;;
+        drivers|driver)             cmd_drivers "${plain[@]}" ;;
+        gaming|games)               cmd_gaming "${plain[@]}" ;;
+        rescue)                     cmd_rescue "${plain[@]}" ;;
+        backup)                     cmd_backup "${plain[@]}" ;;
+
+        # AUR safety / alerts
+        review|aur)                 cmd_review "${plain[@]}" ;;
+        alerts|alert)               cmd_alerts "${plain[@]}" ;;
+        __alert-check)              alerts_check "${plain[@]}" ;;
+
         # cmaal itself
+        plugins|plugin)             cmd_plugins "${plain[@]}" ;;
         whatsnew|changelog)         cmd_whatsnew "${plain[@]}" ;;
         config|conf)                cmd_config "${plain[@]}" ;;
         uninstall)                  cmd_uninstall "${plain[@]}" ;;
 
         -*)                         passthrough "$cmd" "$@" ;;
         *)
-            warn "unknown command: $cmd"
-            printf 'Run %scmaal --help%s for a list of commands.\n' "$C_BOLD" "$C_RESET" >&2
-            return 1
+            # not built in: maybe a plugin (~/.config/cmaal/plugins)
+            run_plugin "$cmd" "${plain[@]}"
+            local rc=$?
+            if (( rc == 127 )) && [[ -z ${_PLUGIN_FILE[$cmd]+x} ]]; then
+                warn "$(tf 'unknown command: %s' "$cmd")"
+                printf '%s\n' "$(tf 'Run %s for a list of commands.' "${C_BOLD}cmaal --help${C_RESET}")" >&2
+                return 1
+            fi
+            return "$rc"
             ;;
     esac
 }

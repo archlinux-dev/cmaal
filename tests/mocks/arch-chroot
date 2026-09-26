@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+printf "arch-chroot %s\n" "$*" >>"${MOCK_LOG:?}"

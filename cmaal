@@ -7,7 +7,7 @@
 # installs over to the package, once. You never need to run it yourself.
 #
 # The line below must stay: the old self-update checks for it.
-CMAAL_VERSION="0.3.0"
+CMAAL_VERSION="1.0.0"
 
 set -o pipefail
 

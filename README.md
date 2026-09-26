@@ -2,7 +2,7 @@
 
 > Pls don't be to mean, its my first project with claude code where i actualy came up with the ideas
 
-A multitool for Arch Linux. One command instead of juggling `pacman`, `yay`, `paru` and `flatpak`, plus rollbacks, SSH shortcuts, system care and self updating. It installs as a real pacman package.
+A multitool for Arch Linux. One command instead of juggling `pacman`, `yay`, `paru` and `flatpak`, plus AUR safety checks, rollbacks, Wi-Fi and bluetooth, gaming setup, rescue, backups, SSH shortcuts and your own plugins. It installs as a real pacman package, and speaks English and German.
 
 ```
 $ cmaal -S discord visual-studio-code-bin spotify
@@ -16,10 +16,17 @@ $ cmaal -S discord visual-studio-code-bin spotify
 
 - [Install](#install)
 - [Packages](#packages)
+- [AUR safety](#aur-safety)
 - [Rollback](#rollback)
 - [System](#system)
+- [Update alerts](#update-alerts)
+- [Desktop](#desktop)
+- [Rescue](#rescue)
+- [Backup](#backup)
 - [SSH](#ssh)
 - [Fun](#fun)
+- [Plugins](#plugins)
+- [Deutsch](#deutsch)
 - [Updating cmaal](#updating-cmaal)
 - [Config](#config)
 - [How it's built](#how-its-built)
@@ -40,6 +47,12 @@ man cmaal            # the full manual
 ```
 
 The installer also offers the optional extras (`fzf`, `reflector`, `pacman-contrib`) and an AUR helper (`yay`) if you don't have one.
+
+Or from the AUR (once it's published there, see [packaging/aur](packaging/aur/README.md)):
+
+```bash
+yay -S cmaal-git
+```
 
 Other ways to install:
 
@@ -83,6 +96,32 @@ cmaal looks in the official repos first, then the AUR, then flatpak, and install
 
 Add `--noconfirm` to skip questions. cmaal then picks each question's default answer, like pacman does.
 
+## AUR safety
+
+Anyone can upload to the AUR, so cmaal looks before it installs. For every AUR package it shows votes, maintainer and last update, and warns when a package is:
+
+- **orphaned** (nobody maintains it)
+- **flagged out of date**
+- **brand new with almost no votes** (read the PKGBUILD first)
+- **changed**: cmaal remembers the PKGBUILD you installed and tells you when an update changes it
+
+```
+==> AUR check
+   fresh-miner 0.0.1-1
+      votes: 1   popularity: 0.5   maintainer: someone
+      last updated 2 days ago
+      ! brand new with almost no votes: read the PKGBUILD first (cmaal review)
+:: There are warnings above. Install anyway? [Y/n]
+```
+
+| Command | What it does |
+| --- | --- |
+| `cmaal review <pkg>` | the card plus what changed in the PKGBUILD since you installed it |
+| `cmaal review` | check every installed AUR package: orphaned, out of date, or removed from the AUR |
+| `cmaal pkgbuild <pkg>` | read the whole PKGBUILD |
+
+Turn the checks off with `AUR_CHECK="no"` in `cmaal config`.
+
 ## Rollback
 
 | Command | What it does |
@@ -119,6 +158,50 @@ A new mesa broke your games? `cmaal downgrade mesa && cmaal hold mesa`, and late
 | `cmaal sys` | system overview |
 | `cmaal doctor` | check optional tools and system health |
 
+## Update alerts
+
+```bash
+cmaal alerts on
+```
+
+cmaal now checks in the background every 6 hours (a systemd user timer, no root) and sends a desktop notification like *"12 updates (3 AUR), 1 unread Arch news, read before upgrading"*. It never installs anything by itself, and it doesn't repeat the same message. `cmaal alerts now` checks right away, `cmaal alerts off` stops it, and `ALERTS_EVERY` in the config changes how often.
+
+## Desktop
+
+| Command | What it does |
+| --- | --- |
+| `cmaal wifi` | pick a network and join it (asks for the password when needed) |
+| `cmaal wifi share` | show the Wi-Fi password and a QR code your phone can scan |
+| `cmaal wifi list / status / forget / on / off` | the rest of Wi-Fi |
+| `cmaal bluetooth` | status and paired devices |
+| `cmaal bluetooth pair` | scan, pair, trust and connect a new device |
+| `cmaal bluetooth connect / disconnect / remove` | pick a device from a list |
+| `cmaal drivers` | detect CPU, GPU, Wi-Fi and audio and install missing microcode, drivers and firmware |
+| `cmaal gaming` | enable multilib and set up Steam, Proton, GameMode, MangoHud and 32-bit drivers |
+
+Wi-Fi uses NetworkManager (`nmcli`); with iwd, `cmaal wifi` opens `iwctl` instead.
+
+## Rescue
+
+`cmaal rescue` helps when your system doesn't boot anymore. Start the Arch USB stick, connect to the internet, and run cmaal straight from git:
+
+```bash
+pacman -Sy git
+git clone https://github.com/archlinux-dev/cmaal
+./cmaal/bin/cmaal rescue
+```
+
+It finds your installed system, mounts it (btrfs `@` subvolumes included), then offers the usual fixes: remove a stuck pacman lock, update everything, reinstall the kernel and initramfs, reinstall GRUB or systemd-boot, reset a password, or show the errors of the last boot. Every command is shown and confirmed before it runs. On a system that still boots, `cmaal rescue` offers the same fixes directly.
+
+## Backup
+
+```bash
+cmaal backup init git@github.com:you/dotfiles.git   # once, use a PRIVATE repo
+cmaal backup                                         # whenever you like
+```
+
+Copies your config files (kitty, shell, git, nvim, hyprland and more, see `cmaal backup list`) plus your package list into a git repository and pushes it. **Private SSH keys, GPG keys, tokens and passwords are never copied.** `cmaal backup add <path>` adds more, `cmaal backup restore` puts files back (your current versions are kept as `.cmaal-old`). On a new PC: restore, then `cmaal pkglist import` the package list from the backup.
+
 ## SSH
 
 | Command | What it does |
@@ -153,6 +236,33 @@ allow_remote_control yes
 | `cmaal theme <name>` | switch straight to a theme, e.g. `cmaal theme Catppuccin-Mocha` |
 | `cmaal weather [city]` | 3 day forecast from wttr.in |
 
+## Plugins
+
+Make your own cmaal commands:
+
+```bash
+cmaal plugins new hello
+cmaal plugins edit hello
+cmaal hello
+```
+
+A plugin is a bash file in `~/.config/cmaal/plugins/` with a `plugin_<name>` function. It can use all of cmaal's helpers (`msg`, `ok`, `warn`, `ask`, `as_root`, ...) and hook into cmaal:
+
+```bash
+PLUGIN_DESC="back up my notes after every upgrade"
+
+plugin_notes() { cp -r ~/notes /mnt/usb/; ok "notes copied"; }
+
+after_upgrade() { plugin_notes; }
+cmaal_on post_upgrade after_upgrade
+```
+
+Events: `pre_upgrade`, `post_upgrade`, `post_install`. Plugins show up in `cmaal --help` and tab completion. A broken plugin is skipped with a warning instead of breaking cmaal, and plugins can't replace built-in commands.
+
+## Deutsch
+
+cmaal spricht Deutsch, wenn dein System es tut (`LANG=de_AT.UTF-8`, `de_DE`, ...): die ganze Hilfe (`cmaal help`) und die meisten Meldungen. Bei Fragen gilt `j` als Ja. Sprache erzwingen mit `LANGUAGE_UI="de"` oder `"en"` in `cmaal config`.
+
 ## Updating cmaal
 
 cmaal checks GitHub for a new version once a day, in the background, so it never slows anything down. By default it just tells you:
@@ -181,6 +291,10 @@ SSH_NEW_TAB="no"               # yes = cmaal ssh opens a new kitty tab
 SNAPSHOT_BEFORE_UPGRADE="auto" # auto | yes | no
 WEATHER_CITY=""                # empty = detect from your IP
 NOTIFY_AFTER_SECONDS=60        # desktop notification after long upgrades, 0 = off
+AUR_CHECK="yes"                # check AUR packages before installing / upgrading
+LANGUAGE_UI="auto"             # auto | en | de
+ALERTS_EVERY="6h"              # how often cmaal alerts checks
+BACKUP_PATHS=""                # extra paths for cmaal backup
 ```
 
 Environment variables: `NO_COLOR=1` turns colors off, `CMAAL_ASSUME_YES=1` answers yes to every question (for scripts).
@@ -195,6 +309,8 @@ cmaal is plain bash, split into modules:
     core.sh                 config, colors, prompts, sudo, AUR helper detection
     packages.sh             -S, -Ss, -Si, -Syu, fzf pickers
     query.sh                updates, why, files, provides, pkgbuild, orphans
+    aur.sh                  AUR safety: cards, PKGBUILD changes, review
+    alerts.sh               background update alerts
     rollback.sh             undo, downgrade, snapshots, pkglist
     hold.sh                 hold / unhold (pacman IgnorePkg)
     maintenance.sh          clean, mirrors, history, owns, big, fix
@@ -202,9 +318,14 @@ cmaal is plain bash, split into modules:
     news.sh                 Arch news
     ssh.sh                  ssh hosts, keys, kitty integration
     fun.sh                  fetch, theme, weather
+    network.sh              wifi, bluetooth
+    hardware.sh             drivers, gaming
+    rescue.sh               rescue
+    backup.sh               backup
+    plugins.sh              plugins and hooks
     selfupdate.sh           version, self-update, whatsnew, config, uninstall
     help.sh                 help text
-/usr/share/cmaal/           default config, logo
+/usr/share/cmaal/           default config, logo, changelog, translations (i18n/)
 /usr/share/man/man1/cmaal.1
 /usr/share/{bash-completion,zsh,fish}/...   completions
 ```
@@ -214,11 +335,16 @@ In the repo:
 ```
 bin/ lib/ share/ man/ completions/   the program
 packaging/PKGBUILD                   the Arch package
+packaging/aur/                       the AUR package (cmaal-git) and its publish script
 Makefile                             make install / test / lint
 install.sh                           the installer
 tests/                               test suite with fake pacman, yay, flatpak, curl
 cmaal                                one-time mover for 0.1 / 0.2 installs (don't delete)
 ```
+
+## Versions
+
+`MAJOR.MINOR.PATCH`: small updates bump the middle number (1.0 → 1.1), big ones the first (1.x → 2.0), quick fixes the last (1.1.0 → 1.1.1). See the [changelog](CHANGELOG.md).
 
 ## Development
 

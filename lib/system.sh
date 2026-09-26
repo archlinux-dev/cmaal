@@ -54,7 +54,7 @@ cmd_sys() {
 cmd_doctor() {
     local t
     section "Tools"
-    for t in pacman sudo curl git "$HELPER" flatpak fzf reflector paccache ssh kitten jq snapper timeshift; do
+    for t in pacman sudo curl git "$HELPER" flatpak fzf reflector paccache ssh kitten jq snapper timeshift nmcli bluetoothctl notify-send lspci qrencode arch-chroot; do
         [[ -z $t ]] && continue
         if have "$t"; then
             printf '   %s+%s %s\n' "$C_GREEN" "$C_RESET" "$t"

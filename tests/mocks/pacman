@@ -33,7 +33,7 @@ case $op in
     -Qq) awk '{ print $1 }' "$F/installed.txt" ;;
     -Qe) awk '$3 == "explicit" { print $1, $2 }' "$F/installed.txt" ;;
     -Qqen) awk '$3 == "explicit" && $4 == "repo" { print $1 }' "$F/installed.txt" ;;
-    -Qqem|-Qmq) awk '$4 == "aur" { print $1 }' "$F/installed.txt" ;;
+    -Qqem|-Qmq|-Qqm) awk '$4 == "aur" { print $1 }' "$F/installed.txt" ;;
     -Qdtq) awk '$3 == "dep" && $5 == "None" { print $1 }' "$F/installed.txt" | grep . ;;
     -Qi)
         if (( ${#names[@]} )); then

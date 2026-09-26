@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+printf 'bluetoothctl %s\n' "$*" >>"${MOCK_LOG:?}"
+case "$*" in
+    "devices Paired") printf 'Device AA:BB:CC:DD:EE:01 WH-1000XM4\nDevice AA:BB:CC:DD:EE:02 MX Keys\n' ;;
+    "devices") printf 'Device AA:BB:CC:DD:EE:01 WH-1000XM4\nDevice AA:BB:CC:DD:EE:02 MX Keys\nDevice AA:BB:CC:DD:EE:03 New Speaker\n' ;;
+    "info AA:BB:CC:DD:EE:01") echo "	Connected: yes" ;;
+    "info "*) echo "	Connected: no" ;;
+    show) printf 'Controller 00:11:22:33:44:55 (public)\n\tName: archbox\n\tPowered: yes\n\tDiscoverable: no\n' ;;
+esac
+exit 0
