@@ -198,7 +198,7 @@ install_package() {
 
     msg "Installing ${built[0]##*/}"
     as_root pacman -U "${yes[@]}" -- "${built[0]}" || die "pacman could not install the package"
-    BIN=/usr/bin/cmaal
+    BIN="$SYSROOT/usr/bin/cmaal"
 }
 
 install_manual() {
