@@ -55,7 +55,8 @@ jobs:
           pacman -Qi cmaal
           pacman -Ql cmaal
           test ! -e /usr/local/bin/cmaal
-          test "$(command -v cmaal)" = /usr/bin/cmaal
+          # /usr/sbin is a symlink to /usr/bin on Arch, compare real paths
+          test "$(readlink -f "$(command -v cmaal)")" = /usr/bin/cmaal
           pacman -Qo /usr/share/bash-completion/completions/cmaal
           sudo -u builder cmaal --version | tee /dev/stderr | grep -q '(package install)'
           sudo -u builder cmaal help hold
