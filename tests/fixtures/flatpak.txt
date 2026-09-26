@@ -1,0 +1,2 @@
+com.spotify.Client flathub Spotify
+org.gimp.GIMP flathub GIMP

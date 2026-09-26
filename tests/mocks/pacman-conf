@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Fake pacman-conf: CacheDir, and IgnorePkg / validation for a given --config
+conf=/etc/pacman.conf
+[[ $1 == --config ]] && { conf=$2; shift 2; }
+case ${1:-} in
+    CacheDir) printf '%s/\n' "${MOCK_CACHE:?}" ;;
+    IgnorePkg)
+        awk '/^\[options\]/ { o = 1; next } /^\[/ { o = 0 }
+             o && /^[[:space:]]*IgnorePkg[[:space:]]*=/ { sub(/^[^=]*=/, ""); for (i = 1; i <= NF; i++) print $i }' "$conf" ;;
+    "") grep -q '^\[options\]' "$conf" ;;
+esac

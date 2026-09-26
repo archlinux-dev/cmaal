@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+printf "snapper %s\n" "$*" >>"${MOCK_LOG:?}"

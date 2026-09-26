@@ -1,0 +1,294 @@
+.TH CMAAL 1 "" "cmaal @VERSION@" "User Commands"
+.SH NAME
+cmaal \- a multitool for Arch Linux
+.SH SYNOPSIS
+.B cmaal
+.RI [ command ]
+.RI [ arguments ...]
+.br
+.B cmaal
+.RB { \-S | \-Ss | \-Si | \-Syu | \-Syyu | \-R ...}
+.RI [ package ...]
+.SH DESCRIPTION
+.B cmaal
+is one command for everything package related on Arch Linux. It looks for
+packages in the official repositories (pacman), then the AUR (through yay,
+paru or pikaur), then flatpak, and installs each one from wherever it is
+found. It also manages SSH hosts, rolls back upgrades, cleans the system and
+keeps itself up to date.
+.PP
+Any pacman style flag cmaal does not handle itself is passed straight to
+the AUR helper, or to pacman when there is none.
+.PP
+Add
+.B \-\-noconfirm
+to any command to skip questions. cmaal then takes each question's default
+answer, like pacman does.
+.SH PACKAGE COMMANDS
+.TP
+.BI "\-S " package...
+Install packages from the official repos, the AUR or flatpak, whichever has
+them. Without a package name, opens an fzf picker over every available
+package (Tab selects several, a preview shows details).
+.TP
+.BI "\-Ss " query
+Search the repos, the AUR and flatpak at once.
+.TP
+.BI "\-Si " package
+Package information from any source.
+.TP
+.BR \-Syu ", " \-Syyu ", " upgrade
+Upgrade repos, AUR and flatpak. Before upgrading, unread Arch news is shown
+and a snapper or timeshift snapshot is taken (see
+.BR SNAPSHOT_BEFORE_UPGRADE ).
+Afterwards cmaal lists
+.I .pacnew
+files and tells you when a reboot is needed.
+.TP
+.RB "\-Rns " [ \fIpackage\fR ...]
+Remove packages. Without a name, opens an fzf picker over explicitly
+installed packages and flatpaks.
+.TP
+.B updates
+List pending updates without installing anything. Uses
+.BR checkupdates (8)
+when pacman-contrib is installed.
+.TP
+.BI "why " package
+Why a package is installed: by you or as a dependency, and what needs it.
+.TP
+.BI "files " package
+Files a package installs, whether it is installed or not.
+.TP
+.BI "provides " command|file
+Which package provides a command you don't have yet (uses the pacman file
+database, downloaded on first use).
+.TP
+.BI "owns " command|file
+Which installed package a command or file belongs to.
+.TP
+.BI "pkgbuild " package
+Show the build script of a repo or AUR package. Read AUR PKGBUILDs before
+installing them.
+.TP
+.RB "orphans " [ rm ]
+List dependencies nothing needs anymore, and remove them with
+.BR rm .
+.TP
+.RI "big " [ n ]
+The largest installed packages.
+.TP
+.RB "helper " [ "install yay" | "install paru" ]
+Show the AUR helper in use, or build and install one.
+.SH ROLLBACK COMMANDS
+.TP
+.B undo
+Revert the last pacman transaction: restore upgraded and removed packages
+from the package cache (or the Arch Linux Archive) and remove newly
+installed ones. Running it again redoes the change.
+.TP
+.BI "downgrade " package
+Pick an older version from the package cache or the Arch Linux Archive.
+.TP
+.BI "hold " package...
+Keep packages at their current version by adding them to
+.B IgnorePkg
+in
+.IR /etc/pacman.conf .
+The edited file is validated with
+.BR pacman-conf (8)
+and a backup is kept at
+.IR /etc/pacman.conf.cmaal.bak .
+.TP
+.BI "unhold " package...
+Let held packages upgrade again.
+.TP
+.B holds
+List held packages.
+.TP
+.RB "snapshot " [ list | create " [\fIdescription\fR] | " restore ]
+Manage snapper or timeshift snapshots.
+.TP
+.RB "pkglist " export | import " [\fIfile\fR]"
+Save every package you installed (repo, AUR, flatpak) to a file, or install
+everything from such a file. The default file is
+.IR ~/cmaal-packages.txt .
+.TP
+.RI "history " [ n ]
+Recent installs, upgrades and removals from the pacman log.
+.SH SYSTEM COMMANDS
+.TP
+.B clean
+Remove orphans, trim the package cache, AUR build caches, unused flatpak
+runtimes and the systemd journal. Asks before each step.
+.TP
+.B fix
+Fix common pacman problems: a leftover database lock, keyring and signature
+errors, a dead mirror, database inconsistencies and packages with missing
+files.
+.TP
+.RI "mirrors " [ country ]
+Rank the fastest mirrors with
+.BR reflector (1).
+The old mirrorlist is kept as
+.IR mirrorlist.bak .
+.TP
+.RI "news " [ n ]
+Latest Arch Linux news.
+.TP
+.RB "services " [ \-\-user "] [\fIname\fR] [\fIaction\fR]"
+Pick a systemd service, then status, start, stop, restart, enable, disable
+or logs.
+.TP
+.RI "logs " [ unit | prev | \-f ]
+Errors from the journal since boot, from the previous boot, for one unit, or
+followed live.
+.TP
+.B kernel
+Running and installed kernels, and whether a reboot is needed.
+.TP
+.B disk
+Disk usage, caches you can clean and the biggest folders in your home.
+.TP
+.B ports
+Which programs listen on which ports.
+.TP
+.B ip
+Local and public IP addresses.
+.TP
+.BR sys ", " fetch
+System overview; fetch shows it next to the Arch logo.
+.TP
+.B doctor
+Check optional tools and system health.
+.SH SSH COMMANDS
+.TP
+.B ssh
+Pick a saved host (fzf if installed) and connect. Inside kitty, cmaal
+connects with
+.B kitten ssh
+so the server learns kitty's terminal type.
+.TP
+.RB "ssh " [ \-t ] " \fIhost\fR [\fIargs\fR]"
+Connect to a host.
+.B \-t
+opens it in a new kitty tab (needs
+.B allow_remote_control yes
+in kitty.conf).
+.TP
+.B ssh ls \fR|\fB add \fR|\fB rm \fR|\fB edit
+List, add, remove or edit hosts in
+.IR ~/.ssh/config .
+.TP
+.B ssh keygen \fR|\fB keys \fR|\fB copy \fR|\fB test
+Create an ed25519 key, list keys, copy a key to a server, test key login.
+.TP
+.B ssh server on \fR|\fB off \fR|\fB status
+Manage the local sshd.
+.SH OTHER COMMANDS
+.TP
+.RI "theme " [ name ]
+Pick or switch the kitty color theme.
+.TP
+.RI "weather " [ city ]
+Weather forecast from wttr.in.
+.TP
+.RB "self\-update " [ \-\-force ]
+Update cmaal. For a package install this rebuilds the package with
+.BR makepkg (8).
+.TP
+.RI "whatsnew " [ version | all ]
+What changed in a version.
+.TP
+.RB "config " [ edit | show | path | reset ]
+Edit or inspect the configuration file.
+.TP
+.B uninstall
+Remove cmaal (with pacman for a package install).
+.TP
+.RI "help " [ word ]
+Show help, or only the lines matching a word.
+.SH CONFIGURATION
+Settings are read from
+.IR ~/.config/cmaal/config ,
+a bash file.
+.B cmaal config
+creates it from the defaults in
+.IR /usr/share/cmaal/config.default .
+.TP
+.B AUTO_UPDATE
+.BR notify " (default), " auto " or " off .
+.TP
+.B UPDATE_INTERVAL_HOURS
+How often to check for a new cmaal version (default 24).
+.TP
+.B AUR_HELPER
+.BR auto ", " yay ", " paru ", " pikaur " or " none .
+.TP
+.B USE_FLATPAK
+Include flatpak in search, install and upgrades
+.RB ( yes / no ).
+.TP
+.B SHOW_NEWS_ON_UPGRADE
+Show unread Arch news before upgrading
+.RB ( yes / no ).
+.TP
+.B SNAPSHOT_BEFORE_UPGRADE
+.BR auto ", " yes " or " no .
+.B auto
+skips it when snap-pac or timeshift-autosnap already snapshot.
+.TP
+.B SSH_USE_KITTEN
+Use kitten ssh:
+.BR auto ", " yes " or " no .
+.TP
+.B SSH_NEW_TAB
+Always open ssh hosts in a new kitty tab
+.RB ( yes / no ).
+.TP
+.B WEATHER_CITY
+Default city for
+.BR "cmaal weather" .
+.TP
+.B NOTIFY_AFTER_SECONDS
+Desktop notification when an upgrade takes longer than this (0 = never).
+.SH FILES
+.TP
+.I /usr/bin/cmaal
+The command.
+.TP
+.I /usr/lib/cmaal/
+The modules that implement the commands.
+.TP
+.I ~/.config/cmaal/config
+Your settings.
+.TP
+.I ~/.cache/cmaal/
+Update check, seen news and the AUR package list.
+.SH ENVIRONMENT
+.TP
+.B NO_COLOR
+Disable colored output.
+.TP
+.B CMAAL_BRANCH
+Branch used by self-update (default main).
+.SH EXAMPLES
+.TP
+.B cmaal \-S discord visual\-studio\-code\-bin spotify
+Installs from pacman, the AUR and flatpak in one go.
+.TP
+.B cmaal downgrade mesa && cmaal hold mesa
+Go back to an older mesa and keep it there.
+.TP
+.B cmaal provides htop
+Find out which package gives you the htop command.
+.SH SEE ALSO
+.BR pacman (8),
+.BR makepkg (8),
+.BR yay (8),
+.BR paru (8),
+.BR flatpak (1),
+.BR reflector (1),
+.BR kitty (1)
+.PP
+https://github.com/archlinux\-dev/cmaal

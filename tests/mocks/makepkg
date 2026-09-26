@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+printf "makepkg %s\n" "$*" >>"${MOCK_LOG:?}"
+# pretend we built something
+[[ -n ${PKGDEST:-} && -z ${MOCK_MAKEPKG_FAIL:-} ]] && touch "$PKGDEST/cmaal-0.3.0.r1.gabc1234-1-any.pkg.tar.zst"
+[[ -z ${MOCK_MAKEPKG_FAIL:-} ]]

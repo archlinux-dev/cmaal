@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+printf "timeshift %s\n" "$*" >>"${MOCK_LOG:?}"

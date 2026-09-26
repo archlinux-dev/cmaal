@@ -1,0 +1,5 @@
+# cmaal is split into modules (lib/*.sh) that share globals set in bin/cmaal,
+# so "assigned but unused" / "used but not assigned" are false alarms here.
+disable=SC2034,SC2154
+external-sources=true
+source-path=SCRIPTDIR

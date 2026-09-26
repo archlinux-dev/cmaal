@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+printf "systemctl %s\n" "$*" >>"${MOCK_LOG:?}"
+case "$*" in
+    *list-unit-files*) printf 'sshd.service disabled -\nbluetooth.service enabled enabled\n' ;;
+    *is-active*) echo active ;;
+    *is-enabled*) echo enabled ;;
+esac
+exit 0

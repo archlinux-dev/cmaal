@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# Fake curl: serves fixtures for the URLs cmaal uses, fails for anything else
+F=${MOCK_FIXTURES:?}
+printf 'curl %s\n' "$*" >>"${MOCK_LOG:?}"
+url="" out=""
+prev=""
+for a in "$@"; do
+    [[ $prev == -o ]] && out=$a
+    [[ $a == http* ]] && url=$a
+    prev=$a
+done
+emit() { if [[ -n $out ]]; then cat >"$out"; else cat; fi; }
+case $url in
+    *aur.archlinux.org/rpc/v5/info*)
+        names=$(grep -o 'arg%5B%5D=[^&]*' <<<"$url" | cut -d= -f2)
+        printf '{"resultcount":1,"results":['
+        sep=""
+        for n in $names; do
+            v=$(awk -v n="$n" '$1 == n { print $2 }' "$F/aur.txt")
+            [[ -n $v ]] && { printf '%s{"Name":"%s","Version":"%s"}' "$sep" "$n" "$v"; sep=","; }
+        done
+        printf '],"type":"multiinfo","version":5}\n' ;;
+    *aur.archlinux.org/packages.gz) { echo "# AUR"; awk '{ print $1 }' "$F/aur.txt"; } | gzip | emit ;;
+    *aur.archlinux.org/cgit/aur.git/plain/PKGBUILD*) printf 'pkgname=%s\npkgver=1.0\n' "${url##*=}" | emit ;;
+    */VERSION) printf '%s\n' "${MOCK_REMOTE_VERSION:-0.0.1}" | emit ;;
+    *raw.githubusercontent.com/*/main/cmaal) emit <"${MOCK_REPO:?}/cmaal" ;;
+    *raw.githubusercontent.com/*/main/install.sh) emit <"${MOCK_REPO:?}/install.sh" ;;
+    *raw.githubusercontent.com/*/main/packaging/PKGBUILD) emit <"${MOCK_REPO:?}/packaging/PKGBUILD" ;;
+    *archlinux.org/feeds/news/) emit <"$F/news.xml" ;;
+    *archive.archlinux.org/packages/h/htop/)
+        printf '<a href="htop-3.2.0-1-x86_64.pkg.tar.zst">x</a> <a href="htop-3.2.0-1-x86_64.pkg.tar.zst.sig">s</a> <a href="htop-3.1.0-1-x86_64.pkg.tar.zst">y</a>\n' | emit ;;
+    *) exit 22 ;;
+esac

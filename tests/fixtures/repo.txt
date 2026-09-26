@@ -1,0 +1,7 @@
+extra firefox 130.0-1
+extra fish 3.7.1-1
+core git 2.46.0-1
+extra htop 3.3.0-1
+core linux 6.10.2.arch1-1
+extra fzf 0.55.0-1
+extra reflector 2023-1

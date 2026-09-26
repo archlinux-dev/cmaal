@@ -1,0 +1,2 @@
+#Server = https://old.example/$repo/os/$arch
+Server = https://mirror.example/archlinux/$repo/os/$arch
