@@ -37,6 +37,15 @@ _cmaal() {
         'kernel:running vs installed kernels'
         'disk:disk usage'
         'whatsnew:what changed in this version'
+        'review:AUR safety check'
+        'alerts:update notifications'
+        'wifi:pick and join Wi-Fi'
+        'bluetooth:pair and connect devices'
+        'drivers:install missing drivers'
+        'gaming:set up Steam and friends'
+        'rescue:fix a system that will not boot'
+        'backup:back up config files'
+        'plugins:your own commands'
         'undo:revert the last pacman transaction'
         'downgrade:go back to an older version'
         'snapshot:snapper/timeshift snapshots'
@@ -95,6 +104,12 @@ _cmaal() {
             fi
             ;;
         logs) compadd -- prev -f ${(f)"$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk '{ sub(/\.service$/, "", $1); print $1 }')"} ;;
+        review) compadd -- ${(f)"$(pacman -Qqm 2>/dev/null)"} ;;
+        alerts) compadd -- on off now status ;;
+        wifi) compadd -- connect list status on off forget share ;;
+        bluetooth) compadd -- status on off pair connect disconnect remove ;;
+        backup) if (( CURRENT == 3 )); then compadd -- init add rm list log restore; else _files; fi ;;
+        plugins) compadd -- list new edit rm dir ;;
         helper) compadd -- status install yay paru ;;
         config) compadd -- edit show path reset ;;
         self-update) compadd -- --force ;;

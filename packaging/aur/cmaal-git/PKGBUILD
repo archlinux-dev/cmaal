@@ -1,13 +1,11 @@
 # Maintainer: archlinux-dev <https://github.com/archlinux-dev>
 #
-# Builds cmaal from git. install.sh and `cmaal self-update` use this file.
-# Build it yourself with:  makepkg -si
-#
-# CMAAL_SOURCE / CMAAL_BRANCH / CMAAL_GITREF / CMAAL_REPO let the installer build a local
-# checkout or another branch; normally you don't need them.
+# AUR package for cmaal. Install with: yay -S cmaal-git
+# Publish / refresh it with packaging/aur/publish.sh
 
-pkgname=cmaal
-pkgver=1.0.0
+pkgname=cmaal-git
+_pkgname=cmaal
+pkgver=1.0.0.r0.g0000000
 pkgrel=1
 pkgdesc="A multitool for Arch Linux: one command for pacman, the AUR and flatpak, plus SSH, rollbacks and system care"
 arch=('any')
@@ -15,7 +13,6 @@ url="https://github.com/archlinux-dev/cmaal"
 license=('Apache-2.0')
 depends=('bash' 'pacman' 'curl' 'coreutils' 'findutils' 'gawk' 'grep' 'sed' 'gzip' 'procps-ng')
 makedepends=('git' 'make')
-conflicts=('cmaal-git')
 optdepends=(
     'fzf: package, service, version and ssh pickers'
     'yay: AUR support (or paru / pikaur)'
@@ -38,22 +35,22 @@ optdepends=(
     'arch-install-scripts: arch-chroot for cmaal rescue'
     'git: cmaal backup'
 )
-_repo=${CMAAL_REPO:-archlinux-dev/cmaal}
-# CMAAL_GITREF can pin an exact commit (commit=<sha>), otherwise the branch is used
-source=("$pkgname::${CMAAL_SOURCE:-git+https://github.com/$_repo.git}#${CMAAL_GITREF:-branch=${CMAAL_BRANCH:-main}}")
+provides=('cmaal')
+conflicts=('cmaal')
+source=("$_pkgname::git+https://github.com/archlinux-dev/cmaal.git")
 sha256sums=('SKIP')
 
 pkgver() {
-    cd "$pkgname"
+    cd "$_pkgname"
     printf '%s.r%s.g%s' "$(tr -d '[:space:]' < VERSION)" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
 }
 
 check() {
-    cd "$pkgname"
+    cd "$_pkgname"
     make check
 }
 
 package() {
-    cd "$pkgname"
+    cd "$_pkgname"
     make DESTDIR="$pkgdir" PREFIX=/usr install
 }

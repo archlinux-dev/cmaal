@@ -71,6 +71,13 @@ Which installed package a command or file belongs to.
 Show the build script of a repo or AUR package. Read AUR PKGBUILDs before
 installing them.
 .TP
+.RI "review " [ package ]
+AUR safety check: votes, maintainer, age, out-of-date flags, and what changed
+in the PKGBUILD since you installed it. Without a name, checks every installed
+AUR package for orphaned, out of date and removed packages. cmaal also runs
+these checks before installing or upgrading AUR packages (see
+.BR AUR_CHECK ).
+.TP
 .RB "orphans " [ rm ]
 List dependencies nothing needs anymore, and remove them with
 .BR rm .
@@ -161,6 +168,41 @@ System overview; fetch shows it next to the Arch logo.
 .TP
 .B doctor
 Check optional tools and system health.
+.TP
+.RB "alerts " [ on | off | now | status ]
+Check for updates and unread Arch news in the background (a systemd user
+timer, every
+.BR ALERTS_EVERY )
+and send a desktop notification when there is something new.
+.TP
+.B rescue
+Guided repair of a system that doesn't boot: remove a stuck pacman lock,
+update everything, reinstall the kernel and initramfs, reinstall GRUB or
+systemd-boot, reset a password, read the last boot's errors. Booted from the
+Arch USB stick, it first finds and mounts your installed system and works
+inside it with arch-chroot. Every command is shown and confirmed first.
+.TP
+.RB "backup " [ init " [\fIgit-url\fR] | " add " \fIpath\fR | " rm " \fIpath\fR | " list " | " log " | " restore " [\fImatch\fR]]"
+Copy your config files and package list into a git repository, and push it
+when a remote is set. Private SSH keys, GPG keys, tokens and other secrets are
+never copied.
+.SH DESKTOP COMMANDS
+.TP
+.RB "wifi " [ connect " [\fIname\fR] | " list " | " status " | " on " | " off " | " forget " | " share ]
+Pick a Wi-Fi network and join it (NetworkManager).
+.B share
+shows the saved password and a QR code phones can scan.
+.TP
+.RB "bluetooth " [ status | on | off | pair | connect | disconnect | remove ]
+Pair, connect and manage bluetooth devices.
+.TP
+.B drivers
+Detect CPU, GPU, Wi-Fi and audio hardware and install missing microcode,
+drivers and firmware.
+.TP
+.B gaming
+Enable multilib and set up Steam, Proton, GameMode, MangoHud and 32-bit
+graphics drivers, asking before every step.
 .SH SSH COMMANDS
 .TP
 .B ssh
@@ -200,6 +242,10 @@ Update cmaal. For a package install this rebuilds the package with
 .RI "whatsnew " [ version | all ]
 What changed in a version.
 .TP
+.RB "plugins " [ list | new | edit | rm | dir "] [\fIname\fR]"
+Manage your own commands, see
+.BR PLUGINS .
+.TP
 .RB "config " [ edit | show | path | reset ]
 Edit or inspect the configuration file.
 .TP
@@ -208,6 +254,37 @@ Remove cmaal (with pacman for a package install).
 .TP
 .RI "help " [ word ]
 Show help, or only the lines matching a word.
+.SH PLUGINS
+A plugin is a bash file
+.IR ~/.config/cmaal/plugins/ name .sh
+that defines a function
+.BI plugin_ name
+(dashes in the name become underscores). It runs as
+.BI "cmaal " name .
+It may set
+.B PLUGIN_DESC
+for the help, use every cmaal helper
+.RB ( msg ", " ok ", " warn ", " ask ", " as_root ", ...)"
+and register hooks with
+.BI "cmaal_on " event " " function
+for the events
+.BR pre_upgrade ", " post_upgrade " and " post_install .
+A plugin with a syntax error is skipped with a warning; plugins cannot replace
+built-in commands.
+.B cmaal plugins new
+creates a template.
+.SH LANGUAGE
+cmaal speaks German when
+.B LANG
+(or
+.BR LC_MESSAGES )
+starts with
+.BR de ,
+and answers such as
+.B j
+count as yes. Set
+.B LANGUAGE_UI
+to force a language. Messages without a translation stay English.
 .SH CONFIGURATION
 Settings are read from
 .IR ~/.config/cmaal/config ,
@@ -252,6 +329,23 @@ Default city for
 .TP
 .B NOTIFY_AFTER_SECONDS
 Desktop notification when an upgrade takes longer than this (0 = never).
+.TP
+.B AUR_CHECK
+Check AUR packages before installing and upgrading
+.RB ( yes / no ).
+.TP
+.B LANGUAGE_UI
+.BR auto " (follow " LANG "), " en " or " de .
+.TP
+.B ALERTS_EVERY
+How often
+.B cmaal alerts
+checks, as a systemd time span (default 6h).
+.TP
+.B BACKUP_PATHS
+Extra paths for
+.BR "cmaal backup" ,
+relative to your home, separated by spaces.
 .SH FILES
 .TP
 .I /usr/bin/cmaal
@@ -263,8 +357,20 @@ The modules that implement the commands.
 .I ~/.config/cmaal/config
 Your settings.
 .TP
+.I ~/.config/cmaal/plugins/
+Your plugins.
+.TP
 .I ~/.cache/cmaal/
-Update check, seen news and the AUR package list.
+Update check, seen news, the AUR package list and the PKGBUILDs you installed
+.RI ( pkgbuilds/ ).
+.TP
+.I ~/.local/share/cmaal/backup/
+The git repository of
+.BR "cmaal backup" .
+.TP
+.I ~/.config/systemd/user/cmaal-alerts.timer
+The timer of
+.BR "cmaal alerts" .
 .SH ENVIRONMENT
 .TP
 .B NO_COLOR
@@ -272,6 +378,9 @@ Disable colored output.
 .TP
 .B CMAAL_BRANCH
 Branch used by self-update (default main).
+.TP
+.B CMAAL_ASSUME_YES
+Answer yes to every question (for scripts).
 .SH EXAMPLES
 .TP
 .B cmaal \-S discord visual\-studio\-code\-bin spotify
@@ -279,6 +388,9 @@ Installs from pacman, the AUR and flatpak in one go.
 .TP
 .B cmaal downgrade mesa && cmaal hold mesa
 Go back to an older mesa and keep it there.
+.TP
+.B cmaal review
+Check all installed AUR packages for orphaned or removed ones.
 .TP
 .B cmaal provides htop
 Find out which package gives you the htop command.

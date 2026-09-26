@@ -32,3 +32,17 @@ WEATHER_CITY=""
 # Desktop notification when an upgrade takes longer than this many seconds
 # (needs libnotify). 0 = never
 NOTIFY_AFTER_SECONDS=60
+
+# Check AUR packages (votes, maintainer, PKGBUILD changes) before
+# installing and upgrading: yes / no
+AUR_CHECK="yes"
+
+# Language: auto (follows LANG), en, de
+LANGUAGE_UI="auto"
+
+# How often `cmaal alerts` checks for updates (systemd time: 2h, 6h, 1d)
+ALERTS_EVERY="6h"
+
+# Extra paths for `cmaal backup`, relative to your home, space separated
+# e.g. BACKUP_PATHS=".config/btop .local/share/fonts"
+BACKUP_PATHS=""

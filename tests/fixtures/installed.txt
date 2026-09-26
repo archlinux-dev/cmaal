@@ -5,3 +5,5 @@ linux 6.10.2.arch1-1 explicit repo None
 libfoo 1.0-1 dep repo firefox
 oldlib 0.5-1 dep repo None
 yay-bin 12.3.5-1 explicit aur None
+spotify-launcher 0.5.4-1 explicit aur None
+ghostpkg 1.0-1 explicit aur None

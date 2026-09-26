@@ -1,0 +1,88 @@
+{B}cmaal{R} v{V}  ein Multitool für Arch Linux
+
+{B}PAKETE{R}  (sucht in pacman, dann im AUR, dann in Flatpak)
+  cmaal -S <paket>...        installieren, egal wo das Paket liegt
+  cmaal -S                   ALLE Pakete mit fzf durchsuchen (TAB für mehrere)
+  cmaal -Ss <suche>          Repos, AUR und Flatpak gleichzeitig durchsuchen
+  cmaal -Si <paket>          Paketinfos aus jeder Quelle
+  cmaal -Syu                 alles aktualisieren (Repos, AUR, Flatpak)
+  cmaal -Syyu                genauso, Paketdatenbanken werden neu geladen
+  cmaal -Rns [paket]         entfernen (ohne Namen: mit fzf auswählen)
+  cmaal -Q..., -R..., ...    alle anderen pacman-Optionen werden durchgereicht
+  cmaal install|search|remove|upgrade   dasselbe als Wörter statt Optionen
+  cmaal updates              offene Updates anzeigen, ohne zu installieren
+  cmaal why <paket>          warum ist das installiert, wer braucht es
+  cmaal files <paket>        Dateien eines Pakets
+  cmaal provides <befehl>    welches Paket einen fehlenden Befehl liefert
+  cmaal owns <befehl|datei>  zu welchem installierten Paket ein Befehl gehört
+  cmaal pkgbuild <paket>     Bauskript eines Pakets lesen (bei AUR-Paketen!)
+  cmaal review [paket]       AUR-Sicherheit: Stimmen, Betreuer, PKGBUILD-Änderungen
+                             (ohne Namen: alle installierten AUR-Pakete prüfen)
+  cmaal orphans [rm]         nicht mehr benötigte Abhängigkeiten (und entfernen)
+  cmaal big [n]              die größten installierten Pakete
+  cmaal helper [install yay|paru]   AUR-Helfer anzeigen oder installieren
+
+{B}ZURÜCK{R}
+  cmaal undo                 die letzte Installation/Aktualisierung zurücknehmen
+  cmaal downgrade <paket>    ältere Version (aus dem Cache oder Arch-Archiv)
+  cmaal hold <paket>...      Pakete auf der aktuellen Version festhalten
+  cmaal unhold <paket>...    wieder aktualisieren lassen
+  cmaal holds                festgehaltene Pakete anzeigen
+  cmaal snapshot [list|create|restore]   snapper/timeshift-Schnappschüsse
+  cmaal pkglist export|import [datei]    alle Pakete sichern / wiederherstellen
+  cmaal history [n]          letzte Installationen, Updates und Entfernungen
+
+{B}SYSTEM{R}
+  cmaal clean                Waisen entfernen, Caches und Journal aufräumen
+  cmaal fix                  pacman reparieren: Sperrdatei, Schlüssel, Mirrors
+  cmaal mirrors [land]       die schnellsten Mirrors mit reflector finden
+  cmaal news [n]             aktuelle Arch-Linux-News
+  cmaal services [--user] [name] [aktion]   systemd-Dienste verwalten
+  cmaal logs [dienst|prev|-f]  Fehler aus dem System-Journal
+  cmaal kernel               laufender vs. installierter Kernel, Neustart nötig?
+  cmaal disk                 Speicherplatz und was man aufräumen kann
+  cmaal ports                welches Programm auf welchem Port lauscht
+  cmaal ip                   lokale und öffentliche IP-Adressen
+  cmaal sys                  Systemübersicht
+  cmaal doctor               Werkzeuge und Systemzustand prüfen
+  cmaal alerts on|off|now    Desktop-Benachrichtigung bei Updates und News
+  cmaal rescue               ein System reparieren, das nicht startet (auch vom USB-Stick)
+  cmaal backup [init|add|list|restore]   Konfigurationsdateien in git sichern
+
+{B}DESKTOP{R}
+  cmaal wifi [list|share|forget|on|off]  WLAN auswählen, QR-Code zum Teilen
+  cmaal bluetooth [pair|connect|...]     Bluetooth-Geräte koppeln und verbinden
+  cmaal drivers              Hardware erkennen, fehlende Treiber installieren
+  cmaal gaming               Steam, Proton, GameMode und MangoHud einrichten
+
+{B}SSH{R}
+  cmaal ssh                  gespeicherten Host auswählen und verbinden
+  cmaal ssh <host> [args]    verbinden (in kitty mit kitten ssh)
+  cmaal ssh -t [host]        in einem neuen kitty-Tab verbinden
+  cmaal ssh ls               gespeicherte Hosts anzeigen
+  cmaal ssh add [name] [user@host[:port]] [schlüssel]
+  cmaal ssh rm <name>        gespeicherten Host entfernen
+  cmaal ssh keygen [name]    ed25519-Schlüssel erstellen
+  cmaal ssh keys             deine öffentlichen Schlüssel anzeigen
+  cmaal ssh copy <host>      Schlüssel auf einen Server kopieren
+  cmaal ssh test <host>      prüfen, ob die Anmeldung per Schlüssel klappt
+  cmaal ssh server on|off|status   den lokalen sshd verwalten
+  cmaal ssh edit             ~/.ssh/config öffnen
+
+{B}SPASS{R}
+  cmaal fetch                Systeminfos mit dem Arch-Logo
+  cmaal theme [name]         kitty-Farbschema wechseln
+  cmaal weather [stadt]      Wettervorhersage
+
+{B}CMAAL{R}
+  cmaal self-update [--force]   cmaal aktualisieren
+  cmaal whatsnew [version|all]  was sich in dieser Version geändert hat
+  cmaal plugins [new|edit|rm]   eigene Befehle (~/.config/cmaal/plugins)
+  cmaal config [edit|show|path|reset]
+  cmaal uninstall
+  cmaal help [wort]          diese Hilfe, oder nur Zeilen mit einem Wort
+  cmaal -V, --version
+
+Mit {B}--noconfirm{R} gibt es keine Rückfragen (die Standardantwort gilt).
+Englisch erzwingen: LANGUAGE_UI="en" in {B}cmaal config{R}
+Handbuch: {B}man cmaal{R}

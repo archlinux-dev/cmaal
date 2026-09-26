@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+printf "mount %s\n" "$*" >>"${MOCK_LOG:?}"

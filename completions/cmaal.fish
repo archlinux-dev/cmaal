@@ -4,7 +4,7 @@ function __cmaal_hosts
     test -f ~/.ssh/config; and awk 'tolower($1) == "host" { for (i = 2; i <= NF; i++) if ($i !~ /[*?!]/) print $i }' ~/.ssh/config
 end
 
-set -l cmds -S -Ss -Si -Syu -Syyu -Rns install search remove upgrade ssh clean mirrors news history owns big sys doctor helper config self-update uninstall help undo downgrade snapshot fix pkglist services logs ports ip theme weather fetch updates why files provides pkgbuild hold unhold holds orphans kernel disk whatsnew
+set -l cmds -S -Ss -Si -Syu -Syyu -Rns install search remove upgrade ssh clean mirrors news history owns big sys doctor helper config self-update uninstall help undo downgrade snapshot fix pkglist services logs ports ip theme weather fetch updates why files provides pkgbuild hold unhold holds orphans kernel disk whatsnew review alerts wifi bluetooth drivers gaming rescue backup plugins
 
 complete -c cmaal -f
 complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "-S" -d "install from repos, AUR or flatpak"
@@ -54,6 +54,16 @@ complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "kernel" -d "run
 complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "disk" -d "disk usage"
 complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "whatsnew" -d "what changed"
 
+complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "review" -d "AUR safety check"
+complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "alerts" -d "update notifications"
+complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "wifi" -d "pick and join Wi-Fi"
+complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "bluetooth" -d "pair and connect devices"
+complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "drivers" -d "install missing drivers"
+complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "gaming" -d "set up Steam and friends"
+complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "rescue" -d "fix a system that won't boot"
+complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "backup" -d "back up config files"
+complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "plugins" -d "your own commands"
+
 complete -c cmaal -n "__fish_seen_subcommand_from -S -Si install" -a "(pacman -Slq 2>/dev/null)"
 complete -c cmaal -n "__fish_seen_subcommand_from -Rns remove downgrade why files hold" -a "(pacman -Qq 2>/dev/null)"
 complete -c cmaal -n "__fish_seen_subcommand_from ssh" -a "-t ls add rm edit keygen keys copy test server (__cmaal_hosts)"
@@ -67,3 +77,9 @@ complete -c cmaal -n "__fish_seen_subcommand_from logs" -a "prev -f"
 complete -c cmaal -n "__fish_seen_subcommand_from pkgbuild" -a "(pacman -Slq 2>/dev/null)"
 complete -c cmaal -n "__fish_seen_subcommand_from unhold" -a "(pacman-conf IgnorePkg 2>/dev/null)"
 complete -c cmaal -n "__fish_seen_subcommand_from orphans" -a "rm"
+complete -c cmaal -n "__fish_seen_subcommand_from review" -a "(pacman -Qqm 2>/dev/null)"
+complete -c cmaal -n "__fish_seen_subcommand_from alerts" -a "on off now status"
+complete -c cmaal -n "__fish_seen_subcommand_from wifi" -a "connect list status on off forget share"
+complete -c cmaal -n "__fish_seen_subcommand_from bluetooth" -a "status on off pair connect disconnect remove"
+complete -c cmaal -n "__fish_seen_subcommand_from backup" -a "init add rm list log restore"
+complete -c cmaal -n "__fish_seen_subcommand_from plugins" -a "list new edit rm dir"

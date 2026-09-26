@@ -36,11 +36,17 @@ cmd_self_update() {
     remote=$(remote_version 10)
     [[ -n $remote ]] || die "could not reach $CMAAL_RAW"
     if [[ -z $force ]] && ! version_gt "$remote" "$CMAAL_VERSION"; then
-        ok "cmaal is up to date (v$CMAAL_VERSION)"
+        ok "$(tf 'cmaal is up to date (v%s)' "$CMAAL_VERSION")"
         return 0
     fi
 
     mode=$(install_mode)
+    # installed from the AUR: that package updates itself through the helper
+    if [[ $mode == package ]] && [[ $(pacman -Qqo -- "$CMAAL_BIN" 2>/dev/null) == cmaal-git ]]; then
+        [[ -n $HELPER ]] || die "cmaal-git came from the AUR, update it with your AUR helper"
+        "$HELPER" -S --needed cmaal-git && ok "$(tf 'updated to v%s' "$remote")"
+        return
+    fi
     msg "Updating cmaal v$CMAAL_VERSION -> v$remote ($mode install)"
     case $mode in
         package) update_package || die "update failed" ;;
@@ -51,7 +57,7 @@ cmd_self_update() {
     esac
 
     mkdir -p "$CACHE_DIR" && printf '%s\n' "$remote" >"$CACHE_DIR/remote_version"
-    ok "updated to v$remote"
+    ok "$(tf 'updated to v%s' "$remote")"
     # the new code is on disk now, let it describe itself
     "$CMAAL_BIN" whatsnew "$remote" 2>/dev/null || true
 }
@@ -112,8 +118,8 @@ auto_update_check() {
         msg "Auto updating cmaal to v$remote"
         cmd_self_update "" || warn "auto update failed, run: cmaal self-update"
     else
-        printf '%s::%s cmaal %sv%s%s is available (you have v%s). Run: %scmaal self-update%s\n' \
-            "$C_YELLOW$C_BOLD" "$C_RESET" "$C_GREEN" "$remote" "$C_RESET" "$CMAAL_VERSION" "$C_BOLD" "$C_RESET" >&2
+        printf '%s::%s %s\n' "$C_YELLOW$C_BOLD" "$C_RESET" \
+            "$(tf 'cmaal %s is available (you have v%s). Run: %s' "${C_GREEN}v$remote$C_RESET" "$CMAAL_VERSION" "${C_BOLD}cmaal self-update$C_RESET")" >&2
     fi
 }
 
@@ -145,7 +151,7 @@ cmd_whatsnew() {
         /^## / { if (found) exit; found = ($2 == v) }
         found' "$file")
     [[ -n $out ]] || die "no changelog entry for v$want (try: cmaal whatsnew all)"
-    section "What's new in cmaal v$want"
+    section "$(tf "What's new in cmaal v%s" "$want")"
     # drop the heading and markdown markup, it's read in a terminal
     sed -e '1d' -e 's/\*\*//g' -e 's/`//g' <<<"$out" | sed -e '/./,$!d' -e 's/^/   /'
 }

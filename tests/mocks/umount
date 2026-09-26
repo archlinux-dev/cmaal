@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+printf "umount %s\n" "$*" >>"${MOCK_LOG:?}"

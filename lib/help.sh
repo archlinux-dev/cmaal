@@ -3,6 +3,12 @@
 # Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/archlinux-dev/cmaal
 
 help_text() {
+    # German (or another language) help, when there is one
+    local file="$CMAAL_SHARE/i18n/help.$CMAAL_LANG.txt"
+    if [[ $CMAAL_LANG != en && -r $file ]]; then
+        sed -e "s/{B}/$C_BOLD/g" -e "s/{R}/$C_RESET/g" -e "s/{V}/$CMAAL_VERSION/g" "$file"
+        return
+    fi
     cat <<EOF
 ${C_BOLD}cmaal${C_RESET} v$CMAAL_VERSION  a multitool for Arch Linux
 
@@ -15,12 +21,15 @@ ${C_BOLD}PACKAGES${C_RESET}  (checks pacman, then the AUR, then flatpak)
   cmaal -Syyu                same, but force refresh of package databases
   cmaal -Rns [pkg]           remove (no name: pick with fzf)
   cmaal -Q..., -R..., ...    any other pacman flag is passed through
+  cmaal install|search|remove|upgrade   the same as words instead of flags
   cmaal updates              list pending updates without installing
   cmaal why <pkg>            why is this installed, what needs it
   cmaal files <pkg>          files a package installs
   cmaal provides <cmd>       which package gives you a missing command
   cmaal owns <cmd|file>      which installed package a command belongs to
   cmaal pkgbuild <pkg>       read a package's build script (check AUR packages!)
+  cmaal review [pkg]         AUR safety: votes, maintainer, PKGBUILD changes
+                             (no name: check every installed AUR package)
   cmaal orphans [rm]         unused dependencies, and remove them
   cmaal big [n]              largest installed packages
   cmaal helper [install yay|paru]   show or install an AUR helper
@@ -48,6 +57,15 @@ ${C_BOLD}SYSTEM${C_RESET}
   cmaal ip                   local and public IP addresses
   cmaal sys                  system overview
   cmaal doctor               check tools and system health
+  cmaal alerts on|off|now    desktop notification when updates or news arrive
+  cmaal rescue               fix a system that won't boot (from the Arch USB too)
+  cmaal backup [init|add|list|restore]   back up your config files to git
+
+${C_BOLD}DESKTOP${C_RESET}
+  cmaal wifi [list|share|forget|on|off]  pick and join Wi-Fi, QR code to share
+  cmaal bluetooth [pair|connect|...]     pair and connect bluetooth devices
+  cmaal drivers              detect hardware, install missing drivers
+  cmaal gaming               set up Steam, Proton, GameMode, MangoHud
 
 ${C_BOLD}SSH${C_RESET}
   cmaal ssh                  pick a saved host and connect (fzf if installed)
@@ -71,6 +89,7 @@ ${C_BOLD}FUN${C_RESET}
 ${C_BOLD}CMAAL${C_RESET}
   cmaal self-update [--force]   update cmaal
   cmaal whatsnew [version|all]  what changed in this version
+  cmaal plugins [new|edit|rm]   your own commands (~/.config/cmaal/plugins)
   cmaal config [edit|show|path|reset]
   cmaal uninstall
   cmaal help [word]          this help, or only the lines matching a word
@@ -93,6 +112,10 @@ usage() {
         fi
     else
         help_text
+        if (( ${#_PLUGIN_FILE[@]} )); then
+            printf '\n%s%s%s\n' "$C_BOLD" "$(t PLUGINS)" "$C_RESET"
+            plugin_help_lines
+        fi
     fi
 }
 

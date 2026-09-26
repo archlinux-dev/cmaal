@@ -13,15 +13,25 @@ emit() { if [[ -n $out ]]; then cat >"$out"; else cat; fi; }
 case $url in
     *aur.archlinux.org/rpc/v5/info*)
         names=$(grep -o 'arg%5B%5D=[^&]*' <<<"$url" | cut -d= -f2)
+        now=$(date +%s)
         printf '{"resultcount":1,"results":['
         sep=""
         for n in $names; do
-            v=$(awk -v n="$n" '$1 == n { print $2 }' "$F/aur.txt")
-            [[ -n $v ]] && { printf '%s{"Name":"%s","Version":"%s"}' "$sep" "$n" "$v"; sep=","; }
+            line=$(awk -v n="$n" '$1 == n' "$F/aur.txt")
+            [[ -n $line ]] || continue
+            read -r name ver votes maint ood lastmod first <<<"$line"
+            [[ $maint == - ]] && maint=null || maint="\"$maint\""
+            [[ $ood == - ]] && ood=null || ood=$(( now - ood * 86400 ))
+            printf '%s{"Name":"%s","Version":"%s","NumVotes":%s,"Popularity":0.5,"Maintainer":%s,"OutOfDate":%s,"LastModified":%s,"FirstSubmitted":%s,"Description":"a, package"}' \
+                "$sep" "$name" "$ver" "$votes" "$maint" "$ood" $(( now - lastmod * 86400 )) $(( now - first * 86400 ))
+            sep=","
         done
         printf '],"type":"multiinfo","version":5}\n' ;;
     *aur.archlinux.org/packages.gz) { echo "# AUR"; awk '{ print $1 }' "$F/aur.txt"; } | gzip | emit ;;
-    *aur.archlinux.org/cgit/aur.git/plain/PKGBUILD*) printf 'pkgname=%s\npkgver=1.0\n' "${url##*=}" | emit ;;
+    *aur.archlinux.org/cgit/aur.git/plain/PKGBUILD*)
+        n=${url##*=}
+        if [[ -f ${MOCK_PKGBUILDS:-/nonexistent}/$n ]]; then emit <"$MOCK_PKGBUILDS/$n"
+        else printf 'pkgname=%s\npkgver=1.0\nsource=(https://example.com/%s.tar.gz)\n' "$n" "$n" | emit; fi ;;
     */VERSION) printf '%s\n' "${MOCK_REMOTE_VERSION:-0.0.1}" | emit ;;
     *raw.githubusercontent.com/*/main/cmaal) emit <"${MOCK_REPO:?}/cmaal" ;;
     *raw.githubusercontent.com/*/main/install.sh) emit <"${MOCK_REPO:?}/install.sh" ;;

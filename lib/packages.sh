@@ -76,7 +76,7 @@ cmd_install() {
     done
     (( ${#pkgs[@]} )) || { cmd_pick_install "${flags[@]}"; return; }
 
-    msg "Looking up ${#pkgs[@]} package(s)..."
+    msg "$(tf 'Looking up %s package(s)...' "${#pkgs[@]}")"
 
     # 1. official repos (also resolves groups and provides)
     for p in "${pkgs[@]}"; do
@@ -115,14 +115,15 @@ cmd_install() {
         for hit in "${flat[@]}"; do printf '%s ' "${hit#*$'\t'}"; done
         printf '\n'
     fi
-    (( ${#missing[@]} )) && printf '   %snot found%s %s\n' "$C_RED$C_BOLD" "$C_RESET" "${missing[*]}"
+    (( ${#missing[@]} )) && printf '   %s%s%s %s\n' "$C_RED$C_BOLD" "$(t "not found")" "$C_RESET" "${missing[*]}"
 
     if (( ${#repo[@]} + ${#aur[@]} + ${#flat[@]} == 0 )); then
-        die "nothing to install. Try: cmaal -Ss ${missing[0]}"
+        die "$(tf 'nothing to install. Try: cmaal -Ss %s' "${missing[0]}")"
     fi
 
     local rc=0
     install_resolved || rc=1
+    (( rc == 0 )) && run_hooks post_install "${repo[@]}" "${aur[@]}"
     (( ${#missing[@]} )) && rc=1
     return "$rc"
 }
@@ -143,9 +144,16 @@ install_resolved() {
                 cmd_helper install yay || rc=1
             fi
         fi
-        if [[ -n $HELPER ]]; then
+        if [[ -n $HELPER ]] && ! aur_precheck "${aur[@]}"; then
+            warn "skipped the AUR packages: ${aur[*]}"
+            rc=1
+        elif [[ -n $HELPER ]]; then
             section "$HELPER -S ${aur[*]}"
-            "$HELPER" -S "${flags[@]}" -- "${aur[@]}" || rc=1
+            if "$HELPER" -S "${flags[@]}" -- "${aur[@]}"; then
+                aur_remember "${aur[@]}"
+            else
+                rc=1
+            fi
         else
             rc=1
         fi
@@ -217,7 +225,11 @@ cmd_upgrade() {
     done
 
     check_news_before_upgrade || die "upgrade aborted"
+    aur_upgrade_check || die "upgrade aborted"
     pre_upgrade_snapshot || die "upgrade aborted"
+    run_hooks pre_upgrade
+    local -a aur_before=()
+    [[ -n $HELPER && $AUR_CHECK == yes ]] && mapfile -t aur_before < <("$HELPER" -Qua 2>/dev/null | awk '{ print $1 }')
     local started=$SECONDS
 
     local rc=0
@@ -235,6 +247,8 @@ cmd_upgrade() {
     fi
 
     post_upgrade_checks
+    (( rc == 0 && ${#aur_before[@]} )) && aur_remember "${aur_before[@]}"
+    run_hooks post_upgrade
 
     local took=$(( SECONDS - started ))
     if (( NOTIFY_AFTER_SECONDS > 0 && took >= NOTIFY_AFTER_SECONDS )); then

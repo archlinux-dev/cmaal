@@ -5,3 +5,16 @@ extra htop 3.3.0-1
 core linux 6.10.2.arch1-1
 extra fzf 0.55.0-1
 extra reflector 2023-1
+multilib steam 1.0.0.81-1
+extra gamemode 1.8.2-1
+multilib lib32-gamemode 1.8.2-1
+extra mangohud 0.7.2-1
+multilib lib32-mangohud 0.7.2-1
+extra mesa 24.2.0-1
+multilib lib32-mesa 24.2.0-1
+extra vulkan-radeon 24.2.0-1
+multilib lib32-vulkan-radeon 24.2.0-1
+extra sof-firmware 2024.06-1
+core linux-firmware 20240909-1
+core intel-ucode 20240910-1
+core amd-ucode 20240910-1

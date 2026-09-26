@@ -16,9 +16,54 @@ SSH_NEW_TAB="no"              # yes: `cmaal ssh` opens hosts in a new kitty tab
 SNAPSHOT_BEFORE_UPGRADE="auto" # auto | yes | no  (snapper/timeshift before -Syu)
 WEATHER_CITY=""               # default city for `cmaal weather`, empty = auto
 NOTIFY_AFTER_SECONDS=60       # desktop notification when an upgrade takes longer (0 = off)
+AUR_CHECK="yes"               # check AUR packages before installing / upgrading
+LANGUAGE_UI="auto"            # auto | en | de   (auto follows $LANG)
+ALERTS_EVERY="6h"             # how often `cmaal alerts` checks, systemd time span
+BACKUP_PATHS=""               # extra paths for `cmaal backup`, space separated
 
 # shellcheck source=/dev/null
 [[ -f $CONFIG_FILE ]] && source "$CONFIG_FILE"
+
+# ---------------------------------------------------------------------------
+# Translations
+#
+# t "English text"         -> the German text when German is on, else as is
+# tf "format %s" args...   -> printf with a translated format
+# The catalog is share/i18n/<lang>.txt: "English<TAB>Translation" per line.
+# Anything not in the catalog simply stays English.
+# ---------------------------------------------------------------------------
+declare -gA _I18N=()
+CMAAL_LANG="en"
+
+i18n_init() {
+    local want=$LANGUAGE_UI k v
+    if [[ $want == auto ]]; then
+        case ${LC_ALL:-${LC_MESSAGES:-${LANG:-}}} in
+            de*) want="de" ;;
+            *) want="en" ;;
+        esac
+    fi
+    [[ $want == en ]] && return 0
+    local file="$CMAAL_SHARE/i18n/$want.txt"
+    [[ -r $file ]] || return 0
+    while IFS=$'\t' read -r k v; do
+        [[ -z $k || $k == \#* || -z $v ]] && continue
+        _I18N[$k]=$v
+    done <"$file"
+    CMAAL_LANG=$want
+}
+i18n_init
+
+t() {
+    if [[ -n ${_I18N[$1]+x} ]]; then printf '%s' "${_I18N[$1]}"; else printf '%s' "$1"; fi
+}
+
+tf() {
+    local fmt
+    fmt=$(t "$1"); shift
+    # shellcheck disable=SC2059
+    printf "$fmt" "$@"
+}
 
 # ---------------------------------------------------------------------------
 # Output helpers
@@ -32,11 +77,11 @@ else
     C_BLUE="" C_MAGENTA="" C_CYAN=""
 fi
 
-msg()     { printf '%s::%s %s\n' "$C_BLUE$C_BOLD" "$C_RESET" "$*"; }
-ok()      { printf '%s ok%s %s\n' "$C_GREEN$C_BOLD" "$C_RESET" "$*"; }
-warn()    { printf '%swarn%s %s\n' "$C_YELLOW$C_BOLD" "$C_RESET" "$*" >&2; }
-die()     { printf '%serror%s %s\n' "$C_RED$C_BOLD" "$C_RESET" "$*" >&2; exit 1; }
-section() { printf '\n%s==> %s%s\n' "$C_MAGENTA$C_BOLD" "$*" "$C_RESET"; }
+msg()     { printf '%s::%s %s\n' "$C_BLUE$C_BOLD" "$C_RESET" "$(t "$*")"; }
+ok()      { printf '%s ok%s %s\n' "$C_GREEN$C_BOLD" "$C_RESET" "$(t "$*")"; }
+warn()    { printf '%s%s%s %s\n' "$C_YELLOW$C_BOLD" "$(t warn)" "$C_RESET" "$(t "$*")" >&2; }
+die()     { printf '%s%s%s %s\n' "$C_RED$C_BOLD" "$(t error)" "$C_RESET" "$(t "$*")" >&2; exit 1; }
+section() { printf '\n%s==> %s%s\n' "$C_MAGENTA$C_BOLD" "$(t "$*")" "$C_RESET"; }
 have()    { command -v "$1" >/dev/null 2>&1; }
 
 CMAAL_YES="${CMAAL_YES:-}"
@@ -46,8 +91,9 @@ has_tty() { { : </dev/tty; } 2>/dev/null; }
 
 # ask "question" [y|n]  -> returns 0 for yes
 ask() {
-    local question=$1 def=${2:-y} hint reply
-    [[ $def == y ]] && hint="[Y/n]" || hint="[y/N]"
+    local question hint reply def=${2:-y}
+    question=$(t "$1")
+    [[ $def == y ]] && hint=$(t "[Y/n]") || hint=$(t "[y/N]")
     # CMAAL_ASSUME_YES=1 answers yes to everything (scripts, tests)
     [[ -n ${CMAAL_ASSUME_YES:-} ]] && return 0
     # --noconfirm takes the default answer, like pacman does
@@ -58,12 +104,14 @@ ask() {
     printf '%s::%s %s %s ' "$C_BLUE$C_BOLD" "$C_RESET" "$question" "$hint" >/dev/tty
     read -r reply </dev/tty || reply=""
     reply=${reply:-$def}
-    [[ $reply =~ ^[Yy] ]]
+    # y/yes, and j/ja for German
+    [[ $reply =~ ^[YyJj] ]]
 }
 
 # prompt "question" [default] -> prints the answer
 prompt() {
-    local question=$1 def=${2:-} reply
+    local question def=${2:-} reply
+    question=$(t "$1")
     if [[ -n $CMAAL_YES ]] || ! has_tty; then
         printf '%s\n' "$def"
         return

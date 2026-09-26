@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# fake mountpoint: "mounted" when MOCK_MOUNTED matches the path
+[[ -n ${MOCK_MOUNTED:-} && ${*: -1} == "$MOCK_MOUNTED" ]]

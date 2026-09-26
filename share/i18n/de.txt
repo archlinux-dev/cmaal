@@ -1,0 +1,282 @@
+# cmaal German messages: English<TAB>Deutsch, one per line.
+# Missing lines stay English. Keep %s placeholders in the same order.
+warn	Warnung
+error	Fehler
+ok	ok
+on	an
+off	aus
+none	keiner
+connected	verbunden
+password	Passwort
+votes	Stimmen
+popularity	Beliebtheit
+maintainer	Betreuer
+PLUGINS	PLUGINS
+(plugin)	(Plugin)
+[Y/n]	[J/n]
+[y/N]	[j/N]
+AUR check	AUR-Prüfung
+AUR health	Zustand der AUR-Pakete
+AUR updates with a changed PKGBUILD	AUR-Updates mit geändertem PKGBUILD
+Action	Aktion
+Address (user@host[:port])	Adresse (user@host[:port])
+Alerts are off. Turn them on with: cmaal alerts on	Benachrichtigungen sind aus. Einschalten mit: cmaal alerts on
+Alias (short name)	Name (kurz)
+Also install Heroic Games Launcher (Epic, GOG, Amazon, AUR)?	Auch den Heroic Games Launcher installieren (Epic, GOG, Amazon, AUR)?
+Also install Lutris (Epic, GOG, emulators)?	Auch Lutris installieren (Epic, GOG, Emulatoren)?
+Also install ProtonUp-Qt (install GE-Proton versions, AUR)?	Auch ProtonUp-Qt installieren (GE-Proton-Versionen, AUR)?
+An outdated keyring causes most 'invalid or corrupted package (PGP signature)' errors	Ein veralteter Schlüsselbund verursacht die meisten Fehler 'invalid or corrupted package (PGP signature)'
+Arch Linux news	Arch-Linux-News
+Back up now with: cmaal backup	Jetzt sichern mit: cmaal backup
+Backing up	Sichern
+Change how often with ALERTS_EVERY in cmaal config (e.g. 2h, 1d)	Wie oft, stellst du mit ALERTS_EVERY in cmaal config ein (z. B. 2h, 1d)
+Changes are normal for new versions. Look for new download URLs or odd commands.	Änderungen sind bei neuen Versionen normal. Achte auf neue Download-Adressen oder seltsame Befehle.
+Check drivers any time with: cmaal drivers	Treiber jederzeit prüfen mit: cmaal drivers
+Checking the Arch Linux Archive...	Arch Linux Archive wird durchsucht...
+Checking	Prüfe
+Continue with the upgrade?	Mit dem Update weitermachen?
+Database lock	Datenbank-Sperre
+Delete it?	Löschen?
+Details for one package: cmaal review <name>	Details zu einem Paket: cmaal review <name>
+Download it now (pacman -Fy)?	Jetzt herunterladen (pacman -Fy)?
+Errors from the previous boot	Fehler vom letzten Start
+Errors since boot	Fehler seit dem Start
+Files that exist now are kept as <name>.cmaal-old	Vorhandene Dateien bleiben als <name>.cmaal-old erhalten
+Filesystems	Dateisysteme
+Find your system	Dein System finden
+Forget	Vergessen
+Gaming setup	Gaming einrichten
+Go?	Los?
+Hardware and drivers	Hardware und Treiber
+Held packages (skipped by -Syu)	Festgehaltene Pakete (von -Syu übersprungen)
+Identity file (enter for default)	Schlüsseldatei (Enter für Standard)
+If you use grub-btrfs you can also boot straight into a snapshot from the grub menu.	Mit grub-btrfs kannst du auch direkt im GRUB-Menü in einen Schnappschuss starten.
+In Steam: Settings > Compatibility > enable Steam Play for all titles (Proton)	In Steam: Einstellungen > Kompatibilität > Steam Play für alle Titel aktivieren (Proton)
+Install everything that's missing?	Alles installieren, was fehlt?
+Install qrencode to get a QR code for phones: cmaal -S qrencode	Für einen QR-Code fürs Handy qrencode installieren: cmaal -S qrencode
+Install yay now?	yay jetzt installieren?
+Installing build dependencies (git, base-devel)	Bauwerkzeuge werden installiert (git, base-devel)
+Installing	Installation
+Just delete that folder to remove it.	Zum Entfernen einfach den Ordner löschen.
+Kernels	Kernel
+Keyring	Schlüsselbund
+Launch options for a game: gamemoderun mangohud %command%	Startoptionen für ein Spiel: gamemoderun mangohud %command%
+Listening ports	Offene Ports
+Local	Lokal
+Mark this PKGBUILD as reviewed?	Dieses PKGBUILD als geprüft markieren?
+Mirrors	Mirrors
+Missing files	Fehlende Dateien
+NVIDIA drivers change often. If your GPU is older than RTX 20, read the Arch wiki before installing.	NVIDIA-Treiber ändern sich oft. Ist deine Grafikkarte älter als RTX 20, lies vorher das Arch-Wiki.
+Network	Netzwerk
+NetworkManager (nmcli) is not installed: cmaal -S networkmanager	NetworkManager (nmcli) ist nicht installiert: cmaal -S networkmanager
+No plugins yet. Make one with: cmaal plugins new <name>	Noch keine Plugins. Eines anlegen mit: cmaal plugins new <name>
+No saved hosts. Add one: cmaal ssh add	Keine gespeicherten Hosts. Einen hinzufügen: cmaal ssh add
+Official repos (pacman)	Offizielle Repos (pacman)
+Official repos	Offizielle Repos
+Only on this PC. To keep it safe elsewhere: cmaal backup init <git-url>	Nur auf diesem PC. Für eine Kopie woanders: cmaal backup init <git-url>
+Orphaned packages	Verwaiste Pakete
+Package cache	Paket-Cache
+Package database	Paketdatenbank
+Paired devices	Gekoppelte Geräte
+Pick a snapshot number from 'cmaal snapshot list', then run:	Such dir eine Nummer aus 'cmaal snapshot list' aus und führe dann aus:
+Pick one (enter to skip)	Eins auswählen (Enter zum Überspringen)
+Plugins	Plugins
+Public	Öffentlich
+Put your device in pairing mode. Scanning for 10 seconds...	Versetze dein Gerät in den Kopplungsmodus. Suche 10 Sekunden lang...
+Rank mirrors now?	Mirrors jetzt neu bewerten?
+Reboot to load new drivers and microcode.	Neu starten, um neue Treiber und Microcode zu laden.
+Remove the cmaal package (pacman -Rns cmaal)?	Das cmaal-Paket entfernen (pacman -Rns cmaal)?
+Remove them with: cmaal orphans rm	Entfernen mit: cmaal orphans rm
+Remove them?	Entfernen?
+Removing newly installed packages	Neu installierte Pakete werden entfernt
+Restore	Wiederherstellen
+Restoring previous versions	Vorherige Versionen werden wiederhergestellt
+Run it?	Ausführen?
+Run pacman -Sc?	pacman -Sc ausführen?
+Running from the Arch USB stick. First we mount your installed system.	Läuft vom Arch-USB-Stick. Zuerst wird dein installiertes System eingebunden.
+Running on your installed system. For a system that won't boot, start the Arch USB stick and run cmaal rescue there.	Läuft auf deinem installierten System. Startet das System nicht, starte den Arch-USB-Stick und führe dort cmaal rescue aus.
+Scan this with your phone camera to join:	Mit der Handykamera scannen, um beizutreten:
+Scanning...	Suche...
+Shrink journal to the last 2 weeks?	Journal auf die letzten 2 Wochen kürzen?
+Snapshot failed. Upgrade anyway?	Schnappschuss fehlgeschlagen. Trotzdem aktualisieren?
+Space you can win back	Platz, den du zurückholen kannst
+Steam needs the multilib repository (32-bit libraries).	Steam braucht das multilib-Repository (32-Bit-Bibliotheken).
+Still getting key errors? Fully reset the pacman keyring?	Immer noch Schlüsselfehler? Den pacman-Schlüsselbund komplett zurücksetzen?
+System	System
+The bluetooth service is not running. Start it (and at boot)?	Der Bluetooth-Dienst läuft nicht. Starten (auch beim Hochfahren)?
+The pacman file database hasn't been downloaded yet (about 50 MB, once).	Die pacman-Dateidatenbank ist noch nicht heruntergeladen (etwa 50 MB, einmalig).
+There are warnings above. Install anyway?	Oben stehen Warnungen. Trotzdem installieren?
+This needs fzf. Install it now?	Dafür wird fzf gebraucht. Jetzt installieren?
+This sets up Steam, Proton, GameMode and MangoHud. Every step asks first.	Richtet Steam, Proton, GameMode und MangoHud ein. Jeder Schritt fragt vorher.
+Tips	Tipps
+Tools	Werkzeuge
+Two GPUs found (hybrid laptop). Tools like envycontrol or supergfxctl can switch between them.	Zwei Grafikkarten gefunden (Hybrid-Laptop). Mit envycontrol oder supergfxctl kannst du umschalten.
+Type exit to come back	Mit exit geht es zurück
+Undo it?	Rückgängig machen?
+Undo the rest anyway?	Den Rest trotzdem rückgängig machen?
+Unmount your system now (do this before rebooting)?	System jetzt aushängen (vor dem Neustart nötig)?
+Unread Arch news (read before upgrading!)	Ungelesene Arch-News (vor dem Update lesen!)
+Unused flatpak runtimes	Ungenutzte Flatpak-Laufzeiten
+Update archlinux-keyring?	archlinux-keyring aktualisieren?
+User	Benutzer
+Version number	Versionsnummer
+What changed since you installed it	Was sich seit deiner Installation geändert hat
+What cmaal backs up (if it exists)	Was cmaal sichert (falls vorhanden)
+What's wrong	Was ist los
+Which disk boots (GRUB goes to its start)	Von welcher Festplatte wird gestartet (GRUB kommt an ihren Anfang)
+Which partition is your Arch root (/)	Welche Partition ist dein Arch-Root (/)
+Whose password	Wessen Passwort
+Wi-Fi networks	WLAN-Netze
+You use iwd, not NetworkManager. Opening iwctl (type: station wlan0 get-networks)	Du nutzt iwd statt NetworkManager. iwctl wird geöffnet (tippe: station wlan0 get-networks)
+a package manager is still running, leaving the lock alone	ein Paketmanager läuft noch, die Sperre bleibt
+added you to the gamemode group (log out and in once)	du bist jetzt in der Gruppe gamemode (einmal ab- und wieder anmelden)
+address required	Adresse fehlt
+alerts off	Benachrichtigungen aus
+alias required	Name fehlt
+all AUR packages look healthy	alle AUR-Pakete sehen gut aus
+all recommended drivers are installed	alle empfohlenen Treiber sind installiert
+auto update failed, run: cmaal self-update	automatisches Update fehlgeschlagen, führe aus: cmaal self-update
+backup saved	Sicherung gespeichert
+bluez is not installed: cmaal -S bluez bluez-utils	bluez ist nicht installiert: cmaal -S bluez bluez-utils
+btrfs subvolume for / (empty = top level)	btrfs-Subvolume für / (leer = oberste Ebene)
+btrfs with a @ subvolume found, mounting that as /	btrfs mit Subvolume @ gefunden, wird als / eingebunden
+clean done	Aufräumen fertig
+cmaal removed. Bye!	cmaal entfernt. Tschüss!
+cmaal theme only works inside the kitty terminal	cmaal theme funktioniert nur im kitty-Terminal
+could not download the PKGBUILD	PKGBUILD konnte nicht geladen werden
+could not fetch Arch news	Arch-News konnten nicht geladen werden
+could not mount your system	dein System konnte nicht eingebunden werden
+could not open a new tab. Add 'allow_remote_control yes' to ~/.config/kitty/kitty.conf and restart kitty. Connecting here instead.	Neuer Tab ging nicht. Trag 'allow_remote_control yes' in ~/.config/kitty/kitty.conf ein und starte kitty neu. Verbinde stattdessen hier.
+could not reach the AUR	das AUR ist nicht erreichbar
+could not reach wttr.in	wttr.in ist nicht erreichbar
+could not start the timer	der Timer konnte nicht starten
+curl is required	curl wird benötigt
+database is consistent	Datenbank ist in Ordnung
+database problems found:	Probleme in der Datenbank gefunden:
+disconnected	getrennt
+done. Finish with a full upgrade: cmaal -Syu	fertig. Zum Abschluss ein komplettes Update: cmaal -Syu
+everything is up to date	alles ist aktuell
+everything up to date	alles aktuell
+found a leftover lock file (an earlier pacman run was interrupted)	alte Sperrdatei gefunden (ein früherer pacman-Lauf wurde unterbrochen)
+gaming setup needs multilib, stopping	Gaming braucht multilib, Abbruch
+git is required: cmaal -S git	git wird benötigt: cmaal -S git
+kernel updated since boot, reboot recommended	Kernel seit dem Start aktualisiert, Neustart empfohlen
+keyring reset	Schlüsselbund zurückgesetzt
+keyring up to date	Schlüsselbund ist aktuell
+lock removed	Sperre entfernt
+mirrorlist updated	Mirrorliste aktualisiert
+multilib is enabled	multilib ist aktiviert
+no AUR packages installed	keine AUR-Pakete installiert
+no backup yet. Start one with: cmaal backup init [git-url]	noch keine Sicherung. Anlegen mit: cmaal backup init [git-url]
+no config yet, defaults in use	noch keine Konfiguration, Standardwerte aktiv
+no keys yet. Create one: cmaal ssh keygen	noch keine Schlüssel. Einen erstellen: cmaal ssh keygen
+no lock file	keine Sperrdatei
+no missing files	keine fehlenden Dateien
+no orphans	keine verwaisten Pakete
+no package file found for these (not in cache or the Arch archive):	keine Paketdatei gefunden für (weder im Cache noch im Arch-Archiv):
+no packages are held	keine Pakete festgehalten
+none yet. Pair one with: cmaal bluetooth pair	noch keine. Eines koppeln mit: cmaal bluetooth pair
+nothing can be undone	nichts kann rückgängig gemacht werden
+nothing changed since the last backup	seit der letzten Sicherung hat sich nichts geändert
+nothing selected	nichts ausgewählt
+nothing to install	nichts zu installieren
+notify-send is missing, install libnotify to see the notifications	notify-send fehlt, installiere libnotify, um die Benachrichtigungen zu sehen
+only files inside your home folder can be backed up	nur Dateien in deinem Home-Ordner können gesichert werden
+paccache not found (pacman-contrib). Falling back to pacman -Sc	paccache nicht gefunden (pacman-contrib). Nutze stattdessen pacman -Sc
+packages with missing files (reinstall them with: cmaal -S <name>):	Pakete mit fehlenden Dateien (neu installieren mit: cmaal -S <name>):
+pacman not found. cmaal package commands only work on Arch based systems.	pacman nicht gefunden. Die Paketbefehle von cmaal gehen nur auf Arch-basierten Systemen.
+paired and connected	gekoppelt und verbunden
+pushed	hochgeladen
+removed	entfernt
+restored	wiederhergestellt
+run this as your normal user, makepkg refuses to build as root	führe das als normaler Benutzer aus, makepkg baut nicht als root
+saved, next time you'll only see new changes	gespeichert, beim nächsten Mal siehst du nur neue Änderungen
+snapshot created	Schnappschuss erstellt
+some packages did not install, see above	manche Pakete wurden nicht installiert, siehe oben
+that looks like a secret, cmaal won't back it up	das sieht nach einem Geheimnis aus, cmaal sichert es nicht
+that partition has no /etc/fstab, it's probably not your root	diese Partition hat keine /etc/fstab, es ist wohl nicht dein Root
+the PKGBUILD is the same as when you installed it	das PKGBUILD ist gleich wie bei deiner Installation
+the edited pacman.conf did not validate, nothing was changed	die geänderte pacman.conf war ungültig, es wurde nichts geändert
+the kernel was upgraded since boot. Reboot to use the new one (some USB devices and modules may not load until then)	der Kernel wurde seit dem Start aktualisiert. Neu starten, um ihn zu nutzen (manche USB-Geräte und Module laden bis dahin nicht)
+the last transaction did not change any packages	der letzte Vorgang hat keine Pakete geändert
+the running kernel matches what is installed	der laufende Kernel entspricht dem installierten
+the running kernel was updated, reboot to load the new one	der laufende Kernel wurde aktualisiert, neu starten, um den neuen zu laden
+undone. Run 'cmaal undo' again to redo.	rückgängig gemacht. 'cmaal undo' noch einmal stellt es wieder her.
+unmounted, you can reboot	ausgehängt, du kannst neu starten
+up to date	aktuell
+update failed	Update fehlgeschlagen
+upgrade aborted	Update abgebrochen
+use a PRIVATE repository: config files can still say a lot about you	nimm ein PRIVATES Repository: Konfigurationsdateien verraten viel über dich
+the package picker needs fzf (or use: cmaal -S <package>)	die Paketauswahl braucht fzf (oder: cmaal -S <paket>)
+the package picker needs fzf (or use: cmaal -Rns <package>)	die Paketauswahl braucht fzf (oder: cmaal -Rns <paket>)
+unknown command: %s	unbekannter Befehl: %s
+! %s: PKGBUILD changed since you last installed it (cmaal review %s)	! %s: PKGBUILD hat sich seit deiner Installation geändert (cmaal review %s)
+! brand new with almost no votes: read the PKGBUILD first (cmaal review)	! ganz neu und kaum Stimmen: lies zuerst das PKGBUILD (cmaal review)
+! flagged out of date %s days ago	! seit %s Tagen als veraltet markiert
+! orphaned: nobody maintains this package	! verwaist: niemand betreut dieses Paket
+%s files copied, %s secret files skipped	%s Dateien kopiert, %s geheime Dateien übersprungen
+%s unread Arch news, read before upgrading	%s ungelesene Arch-News, vor dem Update lesen
+%s updates	%s Updates
+(%s AUR)	(%s AUR)
+Bluetooth %s	Bluetooth %s
+Checking %s AUR packages...	%s AUR-Pakete werden geprüft...
+Connecting to %s	Verbinde mit %s
+Last check: %s	Letzte Prüfung: %s
+RTX 20 and newer. GTX 10 and older: check wiki.archlinux.org/title/NVIDIA	RTX 20 und neuer. GTX 10 und älter: siehe wiki.archlinux.org/title/NVIDIA
+Restore %s files into your home?	%s Dateien in deinen Home-Ordner zurückspielen?
+Run %s for a list of commands.	Mit %s siehst du alle Befehle.
+Run: cmaal -Syu	Ausführen: cmaal -Syu
+Wi-Fi %s	WLAN %s
+added %s	%s hinzugefügt
+alerts are on (every %s)	Benachrichtigungen sind an (alle %s)
+alerts on: cmaal checks every %s and notifies you	Benachrichtigungen an: cmaal prüft alle %s und meldet sich
+and %s more	und %s weitere
+connected to %s	verbunden mit %s
+firmware for many devices	Firmware für viele Geräte
+flagged out of date %s days ago	seit %s Tagen als veraltet markiert
+forgot %s	%s vergessen
+last updated %s days ago	zuletzt vor %s Tagen aktualisiert
+most Broadcom chips need this driver	die meisten Broadcom-Chips brauchen diesen Treiber
+needed for sound on most newer laptops	nötig für Ton auf den meisten neueren Laptops
+not in the AUR anymore (removed or renamed)	nicht mehr im AUR (entfernt oder umbenannt)
+open source, video decoding included	Open Source, mit Videobeschleunigung
+open source, works out of the box	Open Source, läuft sofort
+orphaned (no maintainer)	verwaist (kein Betreuer)
+removed %s from the list	%s von der Liste entfernt
+security and stability fixes for your CPU	Sicherheits- und Stabilitätsfixes für deine CPU
+see: cmaal review %s	siehe: cmaal review %s
+will push to %s	wird hochgeladen nach %s
+your system is already mounted at %s	dein System ist schon unter %s eingebunden
+your system is mounted at %s	dein System ist unter %s eingebunden
+Looking up %s package(s)...	Suche %s Paket(e)...
+nothing to install. Try: cmaal -Ss %s	nichts zu installieren. Versuch: cmaal -Ss %s
+cmaal is up to date (v%s)	cmaal ist aktuell (v%s)
+updated to v%s	aktualisiert auf v%s
+cmaal %s is available (you have v%s). Run: %s	cmaal %s ist verfügbar (du hast v%s). Ausführen: %s
+What's new in cmaal v%s	Neu in cmaal v%s
+CPU microcode	CPU-Microcode
+Audio	Audio
+Firmware	Firmware
+GPU	Grafikkarte
+Wi-Fi	WLAN
+Pair	Koppeln
+Connect	Verbinden
+Disconnect	Trennen
+Remove	Entfernen
+Remove a stuck pacman lock	Hängende pacman-Sperre entfernen
+Update everything (fixes broken partial upgrades)	Alles aktualisieren (behebt kaputte Teil-Updates)
+Reinstall the kernel and rebuild initramfs (black screen, kernel panic, no modules)	Kernel neu installieren und initramfs neu bauen (schwarzer Bildschirm, Kernel Panic, fehlende Module)
+Reinstall the bootloader (GRUB or systemd-boot)	Bootloader neu installieren (GRUB oder systemd-boot)
+Reset a user password	Passwort eines Benutzers zurücksetzen
+Show errors from the last boot	Fehler vom letzten Start anzeigen
+Open a shell inside the system	Eine Shell im System öffnen
+Done	Fertig
+Mount your system	Dein System einbinden
+Remove the pacman lock	pacman-Sperre entfernen
+Full system upgrade	Komplettes System-Update
+Rebuild all initramfs images	Alle initramfs-Images neu bauen
+Regenerate the GRUB menu	GRUB-Menü neu erzeugen
+Reinstall systemd-boot	systemd-boot neu installieren
+Unmount	Aushängen
+Hello	Hallo
+not found	nicht gefunden
