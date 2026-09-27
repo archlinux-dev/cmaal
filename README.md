@@ -1,7 +1,5 @@
 # cmaal
 
-> Pls don't be to mean, its my first project with claude code where i actualy came up with the ideas
-
 A multitool for Arch Linux. One command instead of juggling `pacman`, `yay`, `paru` and `flatpak`, plus AUR safety checks, rollbacks, Wi-Fi and bluetooth, gaming setup, rescue, backups, SSH shortcuts and your own plugins. It installs as a real pacman package, and speaks English and German.
 
 ```
