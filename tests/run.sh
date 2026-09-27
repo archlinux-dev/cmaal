@@ -522,7 +522,8 @@ if test_case "setup choices"; then
     file_has "$HOME/.config/cmaal/config" 'LANGUAGE_UI="de"'
     OUT=$("$CMAAL" kaputt 2>&1)
     out_has "unbekannter Befehl"
-    export MOCK_FZF_PICK='absolutely everything'
+    # the first run switched to German, so the choices are German now
+    export MOCK_FZF_PICK='absolutely everything|absolut allem'
     run setup
     file_has "$HOME/.config/cmaal/config" 'AUTO_CONFIRM="all"'
 fi
