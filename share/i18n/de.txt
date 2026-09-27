@@ -417,3 +417,4 @@ Package	Paket
 Command	Befehl
 On/off	an/aus
 cmaal setup	cmaal-Einrichtung
+the upgrade did not finish, see the error above	das Upgrade wurde nicht fertig, siehe den Fehler oben

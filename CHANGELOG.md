@@ -2,6 +2,14 @@
 
 All notable changes to cmaal. `cmaal whatsnew` shows the entry for your installed version.
 
+## 2.1.0
+
+Bug fix release.
+
+- **Fixed:** `cmaal -Syu` and AUR installs with yay stopped with "Invalid option 'nocleanmenu'". yay 12 removed the `--nocleanmenu`, `--nodiffmenu` and `--noeditmenu` options, so cmaal no longer passes them. The `--answerclean`, `--answerdiff` and `--answeredit` answers still skip those questions.
+- `cmaal -Syu` now says clearly when the upgrade did not finish, instead of going on to flatpak as if nothing happened.
+- `cmaal self-update` sees a new release right away. GitHub keeps an old copy of the version file for up to 5 minutes, so it now asks the GitHub API first.
+
 ## 2.0.0
 
 Big release: cmaal now does the clicking for you.

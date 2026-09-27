@@ -253,6 +253,7 @@ cmd_upgrade() {
             notify "Upgrade finished with errors, check the terminal"
         fi
     fi
+    (( rc == 0 )) || warn "the upgrade did not finish, see the error above"
     return "$rc"
 }
 
