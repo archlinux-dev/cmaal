@@ -18,3 +18,4 @@ extra sof-firmware 2024.06-1
 core linux-firmware 20240909-1
 core intel-ucode 20240910-1
 core amd-ucode 20240910-1
+extra zzcmaaltool 1.0-1

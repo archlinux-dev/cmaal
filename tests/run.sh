@@ -592,9 +592,9 @@ if test_case "command-not-found helper"; then
     OUT=$("$CMAAL" __cnf nothingatall 2>&1)
     out_has "command not found"
     out_lacks "cmaal -S"
-    # the hook really works in bash
-    OUT=$(bash -c "source '$HOME/.bashrc'; htop" 2>&1)
-    out_has "cmaal -S htop"
+    # the hook really works in bash (a name no machine has: CI runners have htop)
+    OUT=$(bash -c "source '$HOME/.bashrc'; zzcmaaltool" 2>&1)
+    out_has "cmaal -S zzcmaaltool"
     run cnf remove
     file_lacks "$HOME/.bashrc" "command_not_found_handle"
     file_has "$HOME/.bashrc" "# my bashrc"
