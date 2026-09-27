@@ -5,7 +5,7 @@
 
 pkgname=cmaal-git
 _pkgname=cmaal
-pkgver=2.0.0.r0.g0000000
+pkgver=2.1.0.r0.g0000000
 pkgrel=1
 pkgdesc="A multitool for Arch Linux: one command for pacman, the AUR and flatpak, plus SSH, rollbacks and system care"
 arch=('any')

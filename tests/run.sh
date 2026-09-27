@@ -41,7 +41,7 @@ setup() {
     export CMAAL_AUTO_CONFIRM=no
     export MOCK_ACTIVE="bluetooth" CMAAL_POWER_SUPPLY="$MOCK_FIXTURES/power_supply"
     unset CMAAL_FORCE_MENU
-    unset MOCK_FZF_PICK MOCK_REMOTE_VERSION CMAAL_ASSUME_YES TERM_PROGRAM
+    unset MOCK_FZF_PICK MOCK_REMOTE_VERSION MOCK_API_VERSION MOCK_YAY_FAIL CMAAL_ASSUME_YES TERM_PROGRAM
     export TERM=dumb
     : >"$MOCK_LOG"
     T="$t"
@@ -159,6 +159,12 @@ if test_case "-Syu"; then
     log_has "yay -Syu --noconfirm"
     log_has "flatpak update -y"
     file_has "$HOME/.cache/cmaal/news_seen" "Manual intervention & you"
+fi
+
+if test_case "-Syu says so when the helper fails"; then
+    MOCK_YAY_FAIL=1 run -Syu --noconfirm
+    rc_is 1
+    out_has "the upgrade did not finish"
 fi
 
 if test_case "-Syu shows unread news"; then
@@ -312,7 +318,7 @@ if test_case "pkglist export / import"; then
     sed -i 's/^\[aur\]$/gonepkg2\n[aur]/' "$T/list.txt"
     run pkglist import "$T/list.txt" --noconfirm
     log_has "pacman -S --noconfirm --needed -- firefox git htop linux"
-    log_has "yay -S --noconfirm --answerclean None --answerdiff None --answeredit None --nocleanmenu --nodiffmenu --noeditmenu --needed -- yay-bin"
+    log_has "yay -S --noconfirm --answerclean None --answerdiff None --answeredit None --needed -- yay-bin"
     out_has "no longer in the repos, skipping: gonepkg2"
 fi
 
@@ -425,6 +431,21 @@ if test_case "update notice"; then
     out_has "cmaal is up to date"
 fi
 
+if test_case "self-update asks the GitHub API first (raw can be 5 minutes old)"; then
+    # raw says 9.9.9, the API says we are current: the API wins
+    MOCK_REMOTE_VERSION=9.9.9
+    MOCK_API_VERSION=$(tr -d "[:space:]" <"$ROOT/VERSION")
+    export MOCK_REMOTE_VERSION MOCK_API_VERSION
+    run self-update
+    out_has "cmaal is up to date"
+    log_has "api.github.com/repos/archlinux-dev/cmaal/contents/VERSION?ref=main"
+    # API down or garbage: fall back to raw
+    MOCK_API_VERSION="<html>"
+    MOCK_REMOTE_VERSION=$(tr -d "[:space:]" <"$ROOT/VERSION")
+    run self-update
+    out_has "cmaal is up to date"
+fi
+
 # ---------------------------------------------------------------------------
 # 2.0: auto-confirm
 # ---------------------------------------------------------------------------
@@ -432,7 +453,7 @@ if test_case "auto-confirm is on by default"; then
     unset CMAAL_AUTO_CONFIRM
     run -S firefox visual-studio-code-bin spotify --needed
     log_has "pacman -S --noconfirm --needed -- firefox"
-    log_has "yay -S --noconfirm --answerclean None --answerdiff None --answeredit None --nocleanmenu --nodiffmenu --noeditmenu --needed -- visual-studio-code-bin"
+    log_has "yay -S --noconfirm --answerclean None --answerdiff None --answeredit None --needed -- visual-studio-code-bin"
     log_has "flatpak install -y --or-update flathub com.spotify.Client"
     : >"$MOCK_LOG"
     run -Rns git
@@ -442,7 +463,8 @@ if test_case "auto-confirm is on by default"; then
     log_has "yay -Qi git"
     log_lacks "yay -Qi --noconfirm"
     run -Syu
-    log_has "yay -Syu --noconfirm"
+    log_has "yay -Syu --noconfirm --answerclean None --answerdiff None --answeredit None"
+    out_lacks "Invalid option"
     log_has "flatpak update -y"
     # questions the user asked for become yes: undo runs without --noconfirm
     touch "$MOCK_CACHE/htop-3.2.0-1-x86_64.pkg.tar.zst" "$MOCK_CACHE/oldthing-0.9-2-any.pkg.tar.zst" \
@@ -705,7 +727,7 @@ if test_case "AUR install check and PKGBUILD changes"; then
     run -S fresh-miner --noconfirm
     out_has "AUR check"
     out_has "brand new"
-    log_has "yay -S --noconfirm --answerclean None --answerdiff None --answeredit None --nocleanmenu --nodiffmenu --noeditmenu -- fresh-miner"
+    log_has "yay -S --noconfirm --answerclean None --answerdiff None --answeredit None -- fresh-miner"
     file_has "$HOME/.cache/cmaal/pkgbuilds/fresh-miner.PKGBUILD" "fresh-miner.tar.gz"
     # the AUR PKGBUILD changes: cmaal should notice
     mkdir -p "$T/pkgbuilds"
@@ -727,7 +749,7 @@ if test_case "AUR check can be turned off"; then
     echo 'AUR_CHECK="no"' >"$HOME/.config/cmaal/config"
     run -S fresh-miner --noconfirm
     out_lacks "AUR check"
-    log_has "yay -S --noconfirm --answerclean None --answerdiff None --answeredit None --nocleanmenu --nodiffmenu --noeditmenu -- fresh-miner"
+    log_has "yay -S --noconfirm --answerclean None --answerdiff None --answeredit None -- fresh-miner"
 fi
 
 # ---------------------------------------------------------------------------

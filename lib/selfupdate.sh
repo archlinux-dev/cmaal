@@ -22,8 +22,20 @@ version_gt() {
     [[ $1 != "$2" && $(printf '%s\n%s\n' "$1" "$2" | sort -V | tail -n1) == "$1" ]]
 }
 
+# remote_version [timeout] [fresh]
+# raw.githubusercontent.com keeps old files for up to 5 minutes after a
+# release, so `self-update` (fresh) asks the GitHub API first, which is
+# current right away. The background check keeps using raw (no rate limit).
 remote_version() {
-    curl -fsSL --max-time "${1:-10}" "$CMAAL_RAW/VERSION" 2>/dev/null | head -n1 | tr -d '[:space:]'
+    local v=""
+    if [[ -n ${2:-} ]]; then
+        v=$(curl -fsSL --max-time "${1:-10}" -H 'Accept: application/vnd.github.raw' \
+            "https://api.github.com/repos/$CMAAL_REPO/contents/VERSION?ref=$CMAAL_BRANCH" 2>/dev/null \
+            | head -n1 | tr -d '[:space:]')
+    fi
+    [[ $v =~ ^[0-9][0-9A-Za-z.+-]*$ ]] || \
+        v=$(curl -fsSL --max-time "${1:-10}" "$CMAAL_RAW/VERSION" 2>/dev/null | head -n1 | tr -d '[:space:]')
+    printf '%s\n' "$v"
 }
 
 # ---------------------------------------------------------------------------
@@ -33,7 +45,7 @@ cmd_self_update() {
     local force="" remote mode
     [[ ${1:-} == --force ]] && force=1
     have curl || die "curl is required"
-    remote=$(remote_version 10)
+    remote=$(remote_version 10 fresh)
     [[ -n $remote ]] || die "could not reach $CMAAL_RAW"
     if [[ -z $force ]] && ! version_gt "$remote" "$CMAAL_VERSION"; then
         ok "$(tf 'cmaal is up to date (v%s)' "$CMAAL_VERSION")"

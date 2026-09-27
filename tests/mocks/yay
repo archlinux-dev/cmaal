@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 F=${MOCK_FIXTURES:?}
 printf 'yay %s\n' "$*" >>"${MOCK_LOG:?}"
+# options yay 12 no longer knows (it stops with "invalid option")
+for a in "$@"; do
+    case $a in --nocleanmenu|--nodiffmenu|--noeditmenu|--noupgrademenu|--cleanmenu|--diffmenu|--editmenu|--upgrademenu)
+        echo " -> Invalid option '${a#--}'" >&2; exit 1 ;;
+    esac
+done
+[[ -n ${MOCK_YAY_FAIL:-} && $1 == -Syu* ]] && { echo 'error: failed to synchronize all databases' >&2; exit 1; }
 names=(); for a in "$@"; do [[ $a == -* ]] || names+=("$a"); done
 case $1 in
     -Ss) grep -i -- "${names[0]}" "$F/aur.txt" | awk '{ printf "aur/%s %s\n    an AUR package\n", $1, $2 }' ;;

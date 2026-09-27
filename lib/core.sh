@@ -108,8 +108,8 @@ tool_yes_flags() {
     # only come up when building, so only -S gets these
     [[ $op == -S* ]] || return 0
     case $tool in
-        yay) printf '%s\n' --answerclean None --answerdiff None --answeredit None \
-                --nocleanmenu --nodiffmenu --noeditmenu ;;
+        # (yay 12 dropped --nocleanmenu and friends; the answers are enough)
+        yay) printf '%s\n' --answerclean None --answerdiff None --answeredit None ;;
         paru) printf '%s\n' --skipreview ;;
         pikaur) printf '%s\n' --noedit --nodiff ;;
     esac

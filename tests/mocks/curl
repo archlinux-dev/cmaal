@@ -32,6 +32,9 @@ case $url in
         n=${url##*=}
         if [[ -f ${MOCK_PKGBUILDS:-/nonexistent}/$n ]]; then emit <"$MOCK_PKGBUILDS/$n"
         else printf 'pkgname=%s\npkgver=1.0\nsource=(https://example.com/%s.tar.gz)\n' "$n" "$n" | emit; fi ;;
+    *api.github.com/repos/*/contents/VERSION*)
+        [[ -n ${MOCK_API_VERSION:-} ]] || exit 22
+        printf '%s\n' "$MOCK_API_VERSION" | emit ;;
     */VERSION) printf '%s\n' "${MOCK_REMOTE_VERSION:-0.0.1}" | emit ;;
     *raw.githubusercontent.com/*/main/cmaal) emit <"${MOCK_REPO:?}/cmaal" ;;
     *raw.githubusercontent.com/*/main/install.sh) emit <"${MOCK_REPO:?}/install.sh" ;;
