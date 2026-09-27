@@ -4,7 +4,7 @@ function __cmaal_hosts
     test -f ~/.ssh/config; and awk 'tolower($1) == "host" { for (i = 2; i <= NF; i++) if ($i !~ /[*?!]/) print $i }' ~/.ssh/config
 end
 
-set -l cmds -S -Ss -Si -Syu -Syyu -Rns install search remove upgrade ssh clean mirrors news history owns big sys doctor helper config self-update uninstall help undo downgrade snapshot fix pkglist services logs ports ip theme weather fetch updates why files provides pkgbuild hold unhold holds orphans kernel disk whatsnew review alerts wifi bluetooth drivers gaming rescue backup plugins
+set -l cmds -S -Ss -Si -Syu -Syyu -Rns install search remove upgrade ssh clean mirrors news history owns big sys doctor helper config self-update uninstall help undo downgrade snapshot fix pkglist services logs ports ip theme weather fetch updates why files provides pkgbuild hold unhold holds orphans kernel disk whatsnew review alerts wifi bluetooth drivers gaming rescue backup plugins menu setup security power stats cnf
 
 complete -c cmaal -f
 complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "-S" -d "install from repos, AUR or flatpak"
@@ -64,6 +64,13 @@ complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "rescue" -d "fix
 complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "backup" -d "back up config files"
 complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "plugins" -d "your own commands"
 
+complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "menu" -d "open the menu"
+complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "setup" -d "first-run questions"
+complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "security" -d "security check and firewall"
+complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "power" -d "battery and power profiles"
+complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "stats" -d "your Arch history"
+complete -c cmaal -n "not __fish_seen_subcommand_from $cmds" -a "cnf" -d "command-not-found helper"
+
 complete -c cmaal -n "__fish_seen_subcommand_from -S -Si install" -a "(pacman -Slq 2>/dev/null)"
 complete -c cmaal -n "__fish_seen_subcommand_from -Rns remove downgrade why files hold" -a "(pacman -Qq 2>/dev/null)"
 complete -c cmaal -n "__fish_seen_subcommand_from ssh" -a "-t ls add rm edit keygen keys copy test server (__cmaal_hosts)"
@@ -83,3 +90,6 @@ complete -c cmaal -n "__fish_seen_subcommand_from wifi" -a "connect list status 
 complete -c cmaal -n "__fish_seen_subcommand_from bluetooth" -a "status on off pair connect disconnect remove"
 complete -c cmaal -n "__fish_seen_subcommand_from backup" -a "init add rm list log restore"
 complete -c cmaal -n "__fish_seen_subcommand_from plugins" -a "list new edit rm dir"
+complete -c cmaal -n "__fish_seen_subcommand_from security" -a "check audit firewall on off status allow"
+complete -c cmaal -n "__fish_seen_subcommand_from power" -a "status set battery performance balanced power-saver"
+complete -c cmaal -n "__fish_seen_subcommand_from cnf" -a "install remove status"

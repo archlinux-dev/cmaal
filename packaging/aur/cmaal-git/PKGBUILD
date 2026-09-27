@@ -5,7 +5,7 @@
 
 pkgname=cmaal-git
 _pkgname=cmaal
-pkgver=1.0.0.r0.g0000000
+pkgver=2.0.0.r0.g0000000
 pkgrel=1
 pkgdesc="A multitool for Arch Linux: one command for pacman, the AUR and flatpak, plus SSH, rollbacks and system care"
 arch=('any')
@@ -34,6 +34,9 @@ optdepends=(
     'pciutils: hardware detection in cmaal drivers, gaming and fetch'
     'arch-install-scripts: arch-chroot for cmaal rescue'
     'git: cmaal backup'
+    'arch-audit: known vulnerabilities in cmaal security'
+    'ufw: firewall for cmaal security firewall'
+    'power-profiles-daemon: power profiles in cmaal power'
 )
 provides=('cmaal')
 conflicts=('cmaal')

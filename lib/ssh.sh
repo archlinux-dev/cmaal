@@ -75,7 +75,7 @@ ssh_add() {
     if [[ $host == *:* ]]; then port=${host##*:}; host=${host%:*}; else port=""; fi
     [[ -n $user ]] || user=$(prompt "User" "$USER")
     [[ -n $port ]] || port=$(prompt "Port" "22")
-    if [[ -z $key && -z $CMAAL_YES ]] && has_tty; then
+    if [[ -z $key && -z $CMAAL_BATCH ]] && has_tty; then
         key=$(prompt "Identity file (enter for default)")
     fi
 
@@ -124,7 +124,7 @@ ssh_keys() {
 ssh_server() {
     case ${1:-status} in
         on|enable|start)
-            have sshd || { ask "openssh is not installed. Install it?" y && as_root pacman -S --needed openssh; } || return 1
+            have sshd || { ask "openssh is not installed. Install it?" y && pac -S --needed openssh; } || return 1
             as_root systemctl enable --now sshd && ok "sshd running"
             ;;
         off|disable|stop)

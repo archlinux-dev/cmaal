@@ -2,6 +2,20 @@
 
 All notable changes to cmaal. `cmaal whatsnew` shows the entry for your installed version.
 
+## 2.0.0
+
+Big release: cmaal now does the clicking for you.
+
+- **Auto-confirm (new default):** cmaal answers every question with its default answer, which is almost always yes. It also tells pacman, yay, paru, pikaur and flatpak not to ask: no "Proceed with installation?", no yay clean-build, diff or edit menus, no paru review. Things you type in (a Wi-Fi name, a package name) still ask. Only a few risky side steps stay "no" by default: overwriting an SSH key, a full keyring reset, deleting AUR build caches, deleting your config on uninstall, NVIDIA drivers, extra game launchers, a partial undo, and upgrading after a failed snapshot. `AUTO_CONFIRM="all"` says yes to those too, `AUTO_CONFIRM="no"` brings the questions back, and `--confirm` asks for one command.
+- **The menu:** type `cmaal` on its own for a searchable menu of everything cmaal can do. Commands run from it and you land back in the menu. `MENU_ON_START="no"` shows the help instead.
+- **First-run setup:** the first time you open the menu, cmaal asks a few questions: language, auto-confirm, AUR helper, flatpak, update alerts, command-not-found helper. Run it again with `cmaal setup`.
+- **New:** `cmaal security` checks pending updates, known vulnerabilities (arch-audit), the firewall, ports open to the network, SSH settings and failed SSH logins. `cmaal security audit` lists the vulnerabilities, and `cmaal security firewall on` sets up ufw safely (keeps SSH open when sshd runs).
+- **New:** `cmaal power` shows battery charge, health (compared to new), charge cycles and time left, plus the power profile. `cmaal power set performance|balanced|power-saver` switches it.
+- **New:** `cmaal cnf install` sets up a command-not-found helper: type a program you don't have and bash, zsh or fish tells you which package has it.
+- **New:** `cmaal stats` shows your Arch history: changes per month, the most upgraded packages, the biggest single change, and days since the last full upgrade.
+- Undo, restore, plugin removal and uninstall now default to yes, since you asked for them.
+- Everything new also speaks German.
+
 ## 1.0.0
 
 The first big release. From here on: small updates are 1.1, 1.2, ..., big ones 2.0.

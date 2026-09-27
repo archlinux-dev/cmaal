@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+printf 'powerprofilesctl %s\n' "$*" >>"${MOCK_LOG:?}"
+case $1 in
+    get) echo balanced ;;
+    list) printf '  performance:\n    CpuDriver:\tamd_pstate\n\n* balanced:\n    CpuDriver:\tamd_pstate\n\n  power-saver:\n    CpuDriver:\tamd_pstate\n' ;;
+esac

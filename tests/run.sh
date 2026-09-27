@@ -37,6 +37,10 @@ setup() {
     export CMAAL_MIRRORLIST="$t/mirrorlist" CMAAL_PACMAN_LOCK="$t/db.lck" CMAAL_PACMAN_SYNC="$t/sync"
     # the installer must never look at the real /usr during tests
     export CMAAL_TEST_SYSROOT="$t/sysroot"
+    # most tests check the plain commands; the auto-confirm tests switch it on
+    export CMAAL_AUTO_CONFIRM=no
+    export MOCK_ACTIVE="bluetooth" CMAAL_POWER_SUPPLY="$MOCK_FIXTURES/power_supply"
+    unset CMAAL_FORCE_MENU
     unset MOCK_FZF_PICK MOCK_REMOTE_VERSION CMAAL_ASSUME_YES TERM_PROGRAM
     export TERM=dumb
     : >"$MOCK_LOG"
@@ -231,7 +235,7 @@ if test_case "orphans"; then
     out_has "oldlib"
     out_has "cmaal orphans rm"
     run orphans rm --noconfirm
-    log_has "pacman -Rns -- oldlib"
+    log_has "pacman -Rns --noconfirm -- oldlib"
 fi
 
 # ---------------------------------------------------------------------------
@@ -279,7 +283,8 @@ if test_case "undo"; then
     log_has "pacman -R -- newdep"
 fi
 
-if test_case "undo needs a yes"; then
+if test_case "partial undo needs a yes"; then
+    # linux can't be restored (no file), so only part could be undone
     touch "$MOCK_CACHE/htop-3.2.0-1-x86_64.pkg.tar.zst"
     run undo --noconfirm
     rc_is 1
@@ -306,8 +311,8 @@ if test_case "pkglist export / import"; then
     printf 'gonepkg\n' >>"$T/list.txt"
     sed -i 's/^\[aur\]$/gonepkg2\n[aur]/' "$T/list.txt"
     run pkglist import "$T/list.txt" --noconfirm
-    log_has "pacman -S --needed --noconfirm -- firefox git htop linux"
-    log_has "yay -S --needed --noconfirm -- yay-bin"
+    log_has "pacman -S --noconfirm --needed -- firefox git htop linux"
+    log_has "yay -S --noconfirm --answerclean None --answerdiff None --answeredit None --nocleanmenu --nodiffmenu --noeditmenu --needed -- yay-bin"
     out_has "no longer in the repos, skipping: gonepkg2"
 fi
 
@@ -329,7 +334,7 @@ if test_case "fix"; then
     touch "$T/db.lck"
     run fix --noconfirm
     if [[ ! -e $T/db.lck ]]; then pass "lock removed"; else fail "lock should be removed"; fi
-    log_has "pacman -Sy --needed --noconfirm archlinux-keyring"
+    log_has "pacman -Sy --noconfirm --needed archlinux-keyring"
     log_lacks "pacman-key --init"
     out_has "first mirror is not responding: https://mirror.example/archlinux"
     log_has "reflector --latest 20"
@@ -338,7 +343,7 @@ fi
 
 if test_case "clean"; then
     run clean --noconfirm
-    log_has "pacman -Rns -- oldlib"
+    log_has "pacman -Rns --noconfirm -- oldlib"
     log_has "journalctl --vacuum-time=2weeks"
 fi
 
@@ -418,6 +423,190 @@ if test_case "update notice"; then
     export MOCK_REMOTE_VERSION
     run self-update
     out_has "cmaal is up to date"
+fi
+
+# ---------------------------------------------------------------------------
+# 2.0: auto-confirm
+# ---------------------------------------------------------------------------
+if test_case "auto-confirm is on by default"; then
+    unset CMAAL_AUTO_CONFIRM
+    run -S firefox visual-studio-code-bin spotify --needed
+    log_has "pacman -S --noconfirm --needed -- firefox"
+    log_has "yay -S --noconfirm --answerclean None --answerdiff None --answeredit None --nocleanmenu --nodiffmenu --noeditmenu --needed -- visual-studio-code-bin"
+    log_has "flatpak install -y --or-update flathub com.spotify.Client"
+    : >"$MOCK_LOG"
+    run -Rns git
+    log_has "yay -Rns --noconfirm git"
+    log_lacks "answerclean"
+    run -Qi git
+    log_has "yay -Qi git"
+    log_lacks "yay -Qi --noconfirm"
+    run -Syu
+    log_has "yay -Syu --noconfirm"
+    log_has "flatpak update -y"
+    # questions the user asked for become yes: undo runs without --noconfirm
+    touch "$MOCK_CACHE/htop-3.2.0-1-x86_64.pkg.tar.zst" "$MOCK_CACHE/oldthing-0.9-2-any.pkg.tar.zst" \
+          "$MOCK_CACHE/linux-6.10.1.arch1-1-x86_64.pkg.tar.zst"
+    run undo
+    log_has "pacman -U --noconfirm --"
+fi
+
+if test_case "auto-confirm keeps typed input and risky extras"; then
+    unset CMAAL_AUTO_CONFIRM
+    mkdir -p "$HOME/.cache/yay"
+    run clean
+    if [[ -d $HOME/.cache/yay ]]; then pass "AUR build cache kept (default no)"; else fail "AUR build cache deleted"; fi
+    log_lacks "pacman-key --init"
+fi
+
+if test_case "auto-confirm all / off / --confirm"; then
+    mkdir -p "$HOME/.config/cmaal" "$HOME/.cache/yay"
+    unset CMAAL_AUTO_CONFIRM
+    echo 'AUTO_CONFIRM="all"' >"$HOME/.config/cmaal/config"
+    run clean
+    if [[ ! -d $HOME/.cache/yay ]]; then pass "all: even default-no questions are yes"; else fail "all: cache kept"; fi
+    echo 'AUTO_CONFIRM="no"' >"$HOME/.config/cmaal/config"
+    : >"$MOCK_LOG"
+    run -S firefox
+    log_has "pacman -S -- firefox"
+    rm "$HOME/.config/cmaal/config"
+    : >"$MOCK_LOG"
+    run -S firefox --confirm
+    log_has "pacman -S -- firefox"
+fi
+
+if test_case "auto-confirm with paru"; then
+    unset CMAAL_AUTO_CONFIRM
+    mkdir -p "$HOME/.config/cmaal"
+    echo 'AUR_HELPER="paru"' >"$HOME/.config/cmaal/config"
+    run -S visual-studio-code-bin
+    log_has "paru -S --noconfirm --skipreview -- visual-studio-code-bin"
+fi
+
+# ---------------------------------------------------------------------------
+# 2.0: menu and setup
+# ---------------------------------------------------------------------------
+if test_case "menu runs first-time setup, then the command"; then
+    export CMAAL_FORCE_MENU=1 MOCK_FZF_PICK='My Arch stats'
+    run
+    out_has "cmaal setup"
+    out_has "setup done"
+    out_has "Your Arch"
+    if [[ -f $HOME/.config/cmaal/.setup-done ]]; then pass "setup marked as done"; else fail "no setup marker"; fi
+    log_has "systemctl --user enable --now cmaal-alerts.timer"
+    file_has "$HOME/.config/cmaal/config" 'AUTO_CONFIRM="yes"'
+    # second start: straight to the menu
+    run
+    out_lacks "cmaal setup"
+    out_has "Your Arch"
+fi
+
+if test_case "menu without a terminal shows the help"; then
+    run
+    out_has "PACKAGES"
+fi
+
+if test_case "menu entry that needs input, nobody typing"; then
+    mkdir -p "$HOME/.config/cmaal"
+    : >"$HOME/.config/cmaal/.setup-done"
+    export CMAAL_FORCE_MENU=1 MOCK_FZF_PICK='Why is a package'
+    OUT=$(timeout 20 "$CMAAL" 2>&1 </dev/null)
+    RC=$?
+    if [[ $RC != 124 ]]; then pass "menu did not hang"; else fail "menu hung"; fi
+    log_lacks "pacman -Qi"
+fi
+
+if test_case "setup choices"; then
+    export MOCK_FZF_PICK='Deutsch'
+    run setup
+    file_has "$HOME/.config/cmaal/config" 'LANGUAGE_UI="de"'
+    OUT=$("$CMAAL" kaputt 2>&1)
+    out_has "unbekannter Befehl"
+    export MOCK_FZF_PICK='absolutely everything'
+    run setup
+    file_has "$HOME/.config/cmaal/config" 'AUTO_CONFIRM="all"'
+fi
+
+# ---------------------------------------------------------------------------
+# 2.0: security, power, command-not-found, stats
+# ---------------------------------------------------------------------------
+if test_case "security check"; then
+    run security
+    out_has "1 update(s) waiting"
+    out_has "2 installed packages have known vulnerabilities, 1 fixed by updating"
+    out_has "no firewall is running"
+    out_has "ports open to the network: 22"
+    out_lacks "631"
+    out_has "SSH server is off"
+    export MOCK_ACTIVE="ufw"
+    run security
+    out_has "firewall active (ufw)"
+    log_lacks "sudo ufw"
+fi
+
+if test_case "security audit and firewall"; then
+    run security audit
+    out_has "CVE-2026-0001"
+    out_has "fixed by updating"
+    export MOCK_ACTIVE="sshd"
+    run security firewall on --noconfirm
+    log_has "ufw default deny incoming"
+    log_has "ufw allow ssh"
+    log_has "ufw --force enable"
+    run security firewall allow 8080
+    log_has "ufw allow 8080"
+fi
+
+if test_case "power"; then
+    run power
+    out_has "76%"
+    out_has "Discharging"
+    out_has "71%"
+    out_has "312"
+    out_has "2h 30min"
+    out_has "> balanced"
+    run power set saver
+    log_has "powerprofilesctl set power-saver"
+    run power set turbo
+    rc_is 1
+    export CMAAL_POWER_SUPPLY="$T/none"
+    run power
+    out_has "No battery found"
+fi
+
+if test_case "command-not-found helper"; then
+    echo "# my bashrc" >"$HOME/.bashrc"
+    echo "# my zshrc" >"$HOME/.zshrc"
+    touch "$T/sync/extra.files"
+    run cnf install
+    file_has "$HOME/.bashrc" "command_not_found_handle()"
+    file_has "$HOME/.zshrc" "command_not_found_handler()"
+    file_has "$HOME/.bashrc" "# my bashrc"
+    run cnf install
+    if [[ $(grep -c 'cmaal command-not-found >>>' "$HOME/.bashrc") == 1 ]]; then pass "installing twice adds it once"; else fail "block added twice"; fi
+    OUT=$("$CMAAL" __cnf htop 2>&1); RC=$?
+    out_has "htop: command not found"
+    out_has "It's in the package extra/htop. Install it with: cmaal -S htop"
+    rc_is 127
+    OUT=$("$CMAAL" __cnf nothingatall 2>&1)
+    out_has "command not found"
+    out_lacks "cmaal -S"
+    # the hook really works in bash
+    OUT=$(bash -c "source '$HOME/.bashrc'; htop" 2>&1)
+    out_has "cmaal -S htop"
+    run cnf remove
+    file_lacks "$HOME/.bashrc" "command_not_found_handle"
+    file_has "$HOME/.bashrc" "# my bashrc"
+fi
+
+if test_case "stats"; then
+    run stats
+    out_has "2026-09-20"
+    out_has "last full upgrade"
+    out_has "2026-09-25"
+    out_has "2026-09"
+    out_has "htop"
+    out_has "4 packages on 2026-09-25"
 fi
 
 # ---------------------------------------------------------------------------
@@ -515,7 +704,7 @@ if test_case "AUR install check and PKGBUILD changes"; then
     run -S fresh-miner --noconfirm
     out_has "AUR check"
     out_has "brand new"
-    log_has "yay -S --noconfirm -- fresh-miner"
+    log_has "yay -S --noconfirm --answerclean None --answerdiff None --answeredit None --nocleanmenu --nodiffmenu --noeditmenu -- fresh-miner"
     file_has "$HOME/.cache/cmaal/pkgbuilds/fresh-miner.PKGBUILD" "fresh-miner.tar.gz"
     # the AUR PKGBUILD changes: cmaal should notice
     mkdir -p "$T/pkgbuilds"
@@ -537,7 +726,7 @@ if test_case "AUR check can be turned off"; then
     echo 'AUR_CHECK="no"' >"$HOME/.config/cmaal/config"
     run -S fresh-miner --noconfirm
     out_lacks "AUR check"
-    log_has "yay -S --noconfirm -- fresh-miner"
+    log_has "yay -S --noconfirm --answerclean None --answerdiff None --answeredit None --nocleanmenu --nodiffmenu --noeditmenu -- fresh-miner"
 fi
 
 # ---------------------------------------------------------------------------
@@ -602,7 +791,7 @@ if test_case "drivers"; then
     out_has "AMD"
     out_has "missing: mesa vulkan-radeon"
     out_has "Intel SOF"
-    log_has "pacman -S --needed --"
+    log_has "pacman -S --noconfirm --needed --"
     log_has "vulkan-radeon"
 fi
 
@@ -611,7 +800,7 @@ if test_case "gaming"; then
     file_has "$T/pacman.conf" "[multilib]"
     file_has "$T/pacman.conf.cmaal.bak" "#[multilib]"
     log_has "pacman -Syu"
-    log_has "pacman -S --needed -- steam gamemode lib32-gamemode mangohud lib32-mangohud lib32-mesa vulkan-radeon lib32-vulkan-radeon"
+    log_has "pacman -S --noconfirm --needed -- steam gamemode lib32-gamemode mangohud lib32-mangohud lib32-mesa vulkan-radeon lib32-vulkan-radeon"
     log_lacks "lutris"
     run gaming --noconfirm
     out_has "multilib is enabled"

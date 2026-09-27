@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+printf "ufw %s\n" "$*" >>"${MOCK_LOG:?}"

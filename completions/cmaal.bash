@@ -13,6 +13,7 @@ _cmaal() {
         undo downgrade snapshot fix pkglist services logs ports ip theme weather fetch
         updates why files provides pkgbuild hold unhold holds orphans kernel disk whatsnew
         review alerts wifi bluetooth drivers gaming rescue backup plugins
+        menu setup security power stats cnf
         $(_cmaal_plugins)
         doctor helper config self-update uninstall help version --help --version"
 
@@ -61,6 +62,21 @@ _cmaal() {
                 mapfile -t COMPREPLY < <(compgen -W "status start stop restart enable disable logs" -- "$cur")
             fi
             ;;
+        security)
+            if (( COMP_CWORD == 2 )); then
+                mapfile -t COMPREPLY < <(compgen -W "check audit firewall" -- "$cur")
+            else
+                mapfile -t COMPREPLY < <(compgen -W "on off status allow" -- "$cur")
+            fi
+            ;;
+        power)
+            if (( COMP_CWORD == 2 )); then
+                mapfile -t COMPREPLY < <(compgen -W "status set battery" -- "$cur")
+            else
+                mapfile -t COMPREPLY < <(compgen -W "performance balanced power-saver" -- "$cur")
+            fi
+            ;;
+        cnf) mapfile -t COMPREPLY < <(compgen -W "install remove status" -- "$cur") ;;
         review) mapfile -t COMPREPLY < <(compgen -W "$(pacman -Qqm 2>/dev/null)" -- "$cur") ;;
         alerts) mapfile -t COMPREPLY < <(compgen -W "on off now status" -- "$cur") ;;
         wifi) mapfile -t COMPREPLY < <(compgen -W "connect list status on off forget share" -- "$cur") ;;

@@ -135,7 +135,7 @@ cmd_backup() {
             printf '   ~/%s\n' "${files[@]}" | head -n 30
             (( ${#files[@]} > 30 )) && printf '   ... %s\n' "$(tf 'and %s more' $(( ${#files[@]} - 30 )))"
             msg "Files that exist now are kept as <name>.cmaal-old"
-            ask "$(tf 'Restore %s files into your home?' "${#files[@]}")" n || return 1
+            ask "$(tf 'Restore %s files into your home?' "${#files[@]}")" y || return 1
             local f
             for f in "${files[@]}"; do
                 mkdir -p "$HOME/$(dirname "$f")"

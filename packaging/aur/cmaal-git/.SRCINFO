@@ -1,6 +1,6 @@
 pkgbase = cmaal-git
 	pkgdesc = A multitool for Arch Linux: one command for pacman, the AUR and flatpak, plus SSH, rollbacks and system care
-	pkgver = 1.0.0.r0.g0000000
+	pkgver = 2.0.0.r0.g0000000
 	pkgrel = 1
 	url = https://github.com/archlinux-dev/cmaal
 	arch = any
@@ -37,6 +37,9 @@ pkgbase = cmaal-git
 	optdepends = pciutils: hardware detection in cmaal drivers, gaming and fetch
 	optdepends = arch-install-scripts: arch-chroot for cmaal rescue
 	optdepends = git: cmaal backup
+	optdepends = arch-audit: known vulnerabilities in cmaal security
+	optdepends = ufw: firewall for cmaal security firewall
+	optdepends = power-profiles-daemon: power profiles in cmaal power
 	provides = cmaal
 	conflicts = cmaal
 	source = cmaal::git+https://github.com/archlinux-dev/cmaal.git

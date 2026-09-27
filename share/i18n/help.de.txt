@@ -1,5 +1,7 @@
 {B}cmaal{R} v{V}  ein Multitool für Arch Linux
 
+  cmaal, cmaal menu          das Menü öffnen (alles, mit Suche)
+
 {B}PAKETE{R}  (sucht in pacman, dann im AUR, dann in Flatpak)
   cmaal -S <paket>...        installieren, egal wo das Paket liegt
   cmaal -S                   ALLE Pakete mit fzf durchsuchen (TAB für mehrere)
@@ -48,6 +50,9 @@
   cmaal alerts on|off|now    Desktop-Benachrichtigung bei Updates und News
   cmaal rescue               ein System reparieren, das nicht startet (auch vom USB-Stick)
   cmaal backup [init|add|list|restore]   Konfigurationsdateien in git sichern
+  cmaal security [audit|firewall on|off]   Sicherheitslücken, Firewall, offene Ports, SSH
+  cmaal power [set <profil>]  Akkuzustand, Energieprofile
+  cmaal stats                deine Arch-Geschichte: Änderungen pro Monat, häufigste Updates
 
 {B}DESKTOP{R}
   cmaal wifi [list|share|forget|on|off]  WLAN auswählen, QR-Code zum Teilen
@@ -78,11 +83,14 @@
   cmaal self-update [--force]   cmaal aktualisieren
   cmaal whatsnew [version|all]  was sich in dieser Version geändert hat
   cmaal plugins [new|edit|rm]   eigene Befehle (~/.config/cmaal/plugins)
+  cmaal setup                   die Fragen vom ersten Start noch einmal
+  cmaal cnf install|remove      bei "command not found" das Paket vorschlagen
   cmaal config [edit|show|path|reset]
   cmaal uninstall
   cmaal help [wort]          diese Hilfe, oder nur Zeilen mit einem Wort
   cmaal -V, --version
 
-Mit {B}--noconfirm{R} gibt es keine Rückfragen (die Standardantwort gilt).
+cmaal beantwortet Fragen selbst mit der Standardantwort (AUTO_CONFIRM in cmaal config).
+Mit {B}--confirm{R} wird diesmal gefragt, {B}--noconfirm{R} ist für Skripte.
 Englisch erzwingen: LANGUAGE_UI="en" in {B}cmaal config{R}
 Handbuch: {B}man cmaal{R}

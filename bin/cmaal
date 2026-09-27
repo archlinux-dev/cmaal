@@ -71,40 +71,55 @@ main() {
     [[ $# -gt 0 ]] && shift
 
     case $cmd in
-        ""|-h|--help|help) usage "$@"; return ;;
+        "")
+            # just `cmaal` in a terminal: the menu; otherwise the help
+            if [[ $MENU_ON_START == yes && -t 0 && -t 1 ]] || [[ -n ${CMAAL_FORCE_MENU:-} ]]; then
+                cmd_menu
+            else
+                usage
+            fi
+            return
+            ;;
+        -h|--help|help) usage "$@"; return ;;
         -V|--version|version) cmd_version; return 0 ;;
         self-update|--self-update|selfupdate) cmd_self_update "$@"; return ;;
         __preview) cmd_preview "$@"; return ;;
+        __cnf) cmd_cnf_lookup "$@"; return ;;
     esac
 
     auto_update_check
 
-    # --noconfirm is kept for package commands (pacman understands it)
-    # and stripped for everything else
+    # --noconfirm: nobody is typing, take every default, no prompts at all
+    # --confirm:   ask me this time, even with AUTO_CONFIRM on
+    # cmaal passes the right flags on to pacman, yay, paru and flatpak itself
     local a
     local -a plain=()
     for a in "$@"; do
-        if [[ $a == --noconfirm ]]; then CMAAL_YES=1; else plain+=("$a"); fi
+        case $a in
+            --noconfirm) CMAAL_YES=1; CMAAL_BATCH=1 ;;
+            --confirm) CMAAL_YES=""; CMAAL_ASSUME_YES="" ;;
+            *) plain+=("$a") ;;
+        esac
     done
 
     case $cmd in
         # packages
-        -S|install|in)              cmd_install "$@" ;;
-        -Ss|search|s|find)          cmd_search "$@" ;;
-        -Si|pkginfo)                cmd_pkginfo "$@" ;;
-        -Syu|-Syyu|-Su|-Suy|-Syuu)  cmd_upgrade "$cmd" "$@" ;;
-        upgrade|update|up)          cmd_upgrade -Syu "$@" ;;
+        -S|install|in)              cmd_install "${plain[@]}" ;;
+        -Ss|search|s|find)          cmd_search "${plain[@]}" ;;
+        -Si|pkginfo)                cmd_pkginfo "${plain[@]}" ;;
+        -Syu|-Syyu|-Su|-Suy|-Syuu)  cmd_upgrade "$cmd" "${plain[@]}" ;;
+        upgrade|update|up)          cmd_upgrade -Syu "${plain[@]}" ;;
         -Sy)
-            if (( $# )); then
-                as_root pacman -Sy && cmd_install "$@"
+            if (( ${#plain[@]} )); then
+                pac -Sy && cmd_install "${plain[@]}"
             else
-                as_root pacman -Sy
+                pac -Sy
             fi
             ;;
         remove|rm|uninstall-pkg)
-            if has_targets "$@"; then passthrough -Rns "$@"; else cmd_pick_remove -Rns "$@"; fi ;;
+            if has_targets "${plain[@]}"; then passthrough -Rns "${plain[@]}"; else cmd_pick_remove -Rns "${plain[@]}"; fi ;;
         -R*)
-            if has_targets "$@"; then passthrough "$cmd" "$@"; else cmd_pick_remove "$cmd" "$@"; fi ;;
+            if has_targets "${plain[@]}"; then passthrough "$cmd" "${plain[@]}"; else cmd_pick_remove "$cmd" "${plain[@]}"; fi ;;
         updates|outdated)           cmd_updates "${plain[@]}" ;;
         pkgbuild)                   cmd_pkgbuild "${plain[@]}" ;;
         why)                        cmd_why "${plain[@]}" ;;
@@ -138,6 +153,10 @@ main() {
         ip|myip)                    cmd_ip "${plain[@]}" ;;
         sys|sysinfo|info)           cmd_sys "${plain[@]}" ;;
         doctor|check)               cmd_doctor "${plain[@]}" ;;
+        security|sec)               cmd_security "${plain[@]}" ;;
+        power|battery)              cmd_power "${plain[@]}" ;;
+        stats|statistics)           cmd_stats "${plain[@]}" ;;
+        cnf|command-not-found)      cmd_cnf "${plain[@]}" ;;
 
         # ssh / kitty / fun
         ssh)                        cmd_ssh "${plain[@]}" ;;
@@ -159,12 +178,14 @@ main() {
         __alert-check)              alerts_check "${plain[@]}" ;;
 
         # cmaal itself
+        menu)                       cmd_menu ;;
+        setup)                      cmd_setup "${plain[@]}" ;;
         plugins|plugin)             cmd_plugins "${plain[@]}" ;;
         whatsnew|changelog)         cmd_whatsnew "${plain[@]}" ;;
         config|conf)                cmd_config "${plain[@]}" ;;
         uninstall)                  cmd_uninstall "${plain[@]}" ;;
 
-        -*)                         passthrough "$cmd" "$@" ;;
+        -*)                         passthrough "$cmd" "${plain[@]}" ;;
         *)
             # not built in: maybe a plugin (~/.config/cmaal/plugins)
             run_plugin "$cmd" "${plain[@]}"

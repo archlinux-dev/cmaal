@@ -162,7 +162,7 @@ cmd_rescue() {
                 ;;
             *) break ;;
         esac
-        [[ -n $CMAAL_YES ]] && break
+        [[ -n $CMAAL_BATCH ]] && break
     done
     if is_live_iso && mountpoint -q "$RESCUE_MNT" 2>/dev/null; then
         ask "Unmount your system now (do this before rebooting)?" y && as_root umount -R "$RESCUE_MNT" && ok "unmounted, you can reboot"
