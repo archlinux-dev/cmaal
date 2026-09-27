@@ -280,3 +280,140 @@ Reinstall systemd-boot	systemd-boot neu installieren
 Unmount	Aushängen
 Hello	Hallo
 not found	nicht gefunden
+A few questions to make cmaal yours. Change anything later with: cmaal setup	Ein paar Fragen, damit cmaal zu dir passt. Später ändern mit: cmaal setup
+Allow something later with: cmaal security firewall allow <port>	Später etwas erlauben mit: cmaal security firewall allow <port>
+Also search, install and update flatpaks?	Auch Flatpaks suchen, installieren und aktualisieren?
+Battery	Akku
+Battery %s	Akku %s
+Biggest single change	Größte einzelne Änderung
+Blocking incoming connections, allowing outgoing	Eingehende Verbindungen werden blockiert, ausgehende erlaubt
+Changes per month	Änderungen pro Monat
+It's in the package %s. Install it with: cmaal -S %s	Steckt im Paket %s. Installieren mit: cmaal -S %s
+Known vulnerabilities (security.archlinux.org)	Bekannte Sicherheitslücken (security.archlinux.org)
+Most upgraded packages	Am häufigsten aktualisierte Pakete
+No AUR helper yet. Install yay (for AUR packages)?	Noch kein AUR-Helfer. yay installieren (für AUR-Pakete)?
+No battery found (desktop PC).	Kein Akku gefunden (Desktop-PC).
+No power profile tool. For quick switching: cmaal -S power-profiles-daemon	Kein Werkzeug für Energieprofile. Zum schnellen Umschalten: cmaal -S power-profiles-daemon
+Number (enter to quit)	Nummer (Enter zum Beenden)
+Off. Turn it on with: cmaal cnf install	Aus. Einschalten mit: cmaal cnf install
+Open a new terminal to use it.	Öffne ein neues Terminal, um es zu nutzen.
+Power profile	Energieprofil
+Quit	Beenden
+SSH accepts passwords (keys are safer)	SSH akzeptiert Passwörter (Schlüssel sind sicherer)
+SSH allows logging in as root	SSH erlaubt die Anmeldung als root
+SSH is running, so SSH stays allowed	SSH läuft, also bleibt SSH erlaubt
+SSH only accepts keys	SSH akzeptiert nur Schlüssel
+SSH root login is off	SSH-Anmeldung als root ist aus
+SSH server is off	SSH-Server ist aus
+Security check	Sicherheitsprüfung
+Some of these are fixed by updating: cmaal -Syu	Einige davon behebt ein Update: cmaal -Syu
+Switch with: cmaal power set performance | balanced | power-saver	Umschalten mit: cmaal power set performance | balanced | power-saver
+TLP and power-profiles-daemon are both installed, they fight each other. Keep one.	TLP und power-profiles-daemon sind beide installiert und stören sich. Behalte nur eines.
+TLP manages power on this PC (tlp-stat -s for details).	TLP verwaltet die Energie auf diesem PC (Details: tlp-stat -s).
+Tell me when updates or Arch news arrive (desktop notification)?	Bei Updates oder Arch-News Bescheid geben (Desktop-Benachrichtigung)?
+The firewall uses ufw, which isn't installed. Install it?	Die Firewall nutzt ufw, das nicht installiert ist. Installieren?
+When I type a program I don't have, suggest the package (command-not-found helper)?	Wenn ich ein Programm eintippe, das fehlt, das Paket vorschlagen (command-not-found-Helfer)?
+Your Arch	Dein Arch
+arch-audit is not installed. Install it?	arch-audit ist nicht installiert. Installieren?
+can't check for known vulnerabilities (arch-audit is not installed)	bekannte Sicherheitslücken können nicht geprüft werden (arch-audit fehlt)
+cmaal ssh keygen, then PasswordAuthentication no	cmaal ssh keygen, danach PasswordAuthentication no
+command-not-found helper removed	command-not-found-Helfer entfernt
+could not install the command-not-found helper	der command-not-found-Helfer konnte nicht eingerichtet werden
+could not turn on alerts	Benachrichtigungen konnten nicht eingeschaltet werden
+details: cmaal security audit	Details: cmaal security audit
+firewall off	Firewall aus
+firewall on (and at every boot)	Firewall an (auch bei jedem Start)
+firewalld is already running, manage it with firewall-cmd	firewalld läuft schon, verwalte es mit firewall-cmd
+more than two weeks without upgrading: cmaal -Syu	seit über zwei Wochen kein Update: cmaal -Syu
+no failed SSH logins in the last 24 hours	keine fehlgeschlagenen SSH-Anmeldungen in den letzten 24 Stunden
+no firewall is running	keine Firewall aktiv
+no known vulnerabilities in installed packages	keine bekannten Sicherheitslücken in installierten Paketen
+no ports open to the network	keine Ports zum Netzwerk offen
+power-profiles-daemon is not installed: cmaal -S power-profiles-daemon	power-profiles-daemon ist nicht installiert: cmaal -S power-profiles-daemon
+set PermitRootLogin no in /etc/ssh/sshd_config	setze PermitRootLogin no in /etc/ssh/sshd_config
+setup done. Open the menu any time by typing: cmaal	Einrichtung fertig. Das Menü öffnest du jederzeit mit: cmaal
+system is up to date	System ist aktuell
+the battery has lost a lot of capacity, a replacement would help	der Akku hat viel Kapazität verloren, ein neuer würde helfen
+ufw is not installed	ufw ist nicht installiert
+ufw is not installed: cmaal security firewall on	ufw ist nicht installiert: cmaal security firewall on
+which program: cmaal ports	welches Programm: cmaal ports
+%s checks fine, %s to look at	%s Prüfungen in Ordnung, %s zum Anschauen
+%s failed SSH logins in the last 24 hours	%s fehlgeschlagene SSH-Anmeldungen in den letzten 24 Stunden
+%s installed packages have known vulnerabilities, %s fixed by updating	%s installierte Pakete haben bekannte Sicherheitslücken, %s behebt ein Update
+%s update(s) waiting (security fixes come with them)	%s Update(s) warten (Sicherheitsfixes kommen damit)
+%sh %smin	%s Std. %s Min.
+(%s by you, %s from the AUR)	(%s von dir, %s aus dem AUR)
+(%s days ago)	(vor %s Tagen)
+All commands (help)	Alle Befehle (Hilfe)
+Arch news	Arch-News
+Automatic (like my system)	Automatisch (wie mein System)
+Back up my config files	Meine Konfigurationsdateien sichern
+Battery and power	Akku und Energie
+Check my AUR packages	Meine AUR-Pakete prüfen
+Clean up (orphans, caches, journal)	Aufräumen (Waisen, Caches, Journal)
+Command-not-found helper	command-not-found-Helfer
+Disk space	Speicherplatz
+Drivers	Treiber
+Find the fastest mirrors	Die schnellsten Mirrors finden
+Find the package once with: cmaal provides %s	Paket einmalig suchen mit: cmaal provides %s
+Fix pacman problems	pacman-Probleme beheben
+Go back to an older version	Zu einer älteren Version zurück
+Health check	Gesundheitscheck
+Install packages (browse everything)	Pakete installieren (alles durchsuchen)
+Keep a package at its version	Ein Paket auf seiner Version halten
+Kernel and reboot check	Kernel und Neustart-Check
+My Arch stats	Meine Arch-Statistik
+No, always ask me	Nein, frag mich immer
+Press Enter for the menu (q to quit) 	Enter für das Menü (q zum Beenden) 
+Remove packages	Pakete entfernen
+Rescue a broken system	Ein kaputtes System retten
+SSH: connect to a server	SSH: mit einem Server verbinden
+Search for a package	Nach einem Paket suchen
+Services	Dienste
+Settings (run the setup again)	Einstellungen (Einrichtung erneut)
+Show available updates	Verfügbare Updates anzeigen
+System info with the Arch logo	Systeminfos mit dem Arch-Logo
+These packages have it:	Diese Pakete haben es:
+Undo the last change	Letzte Änderung rückgängig machen
+Update alerts on / off	Update-Benachrichtigungen an / aus
+Update cmaal	cmaal aktualisieren
+Update everything	Alles aktualisieren
+Weather	Wetter
+What's new	Was ist neu
+Which package has a command?	Welches Paket hat einen Befehl?
+Why is a package installed?	Warum ist ein Paket installiert?
+Yes to absolutely everything	Ja zu absolut allem
+Yes, use the default answer (recommended: almost always yes)	Ja, mit der Standardantwort (empfohlen: fast immer ja)
+active in %s	aktiv in %s
+added to %s	hinzugefügt zu %s
+all %s checks fine	alle %s Prüfungen in Ordnung
+allowed %s	%s erlaubt
+command not found	Befehl nicht gefunden
+firewall active (%s)	Firewall aktiv (%s)
+first log entry	erster Log-Eintrag
+kitty theme	kitty-Farbschema
+last full upgrade	letztes Komplett-Update
+of the capacity it had when new	der Kapazität im Neuzustand
+packages installed	installierte Pakete
+ports open to the network: %s	zum Netzwerk offene Ports: %s
+power profile: %s	Energieprofil: %s
+time left	Restzeit
+type to search, ENTER to run, ESC to quit	tippen zum Suchen, ENTER zum Ausführen, ESC zum Beenden
+Language	Sprache
+Answer questions for me?	Fragen für mich beantworten?
+Packages	Pakete
+Fun	Spaß
+model	Modell
+charge	Ladung
+health	Zustand
+cycles	Ladezyklen
+Discharging	entlädt
+Charging	lädt
+Full	voll
+Not charging	lädt nicht
+Unknown	unbekannt
+Search	Suche
+Package	Paket
+Command	Befehl
+On/off	an/aus
+cmaal setup	cmaal-Einrichtung

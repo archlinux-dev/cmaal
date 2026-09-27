@@ -162,7 +162,7 @@ cmd_orphans() {
         /^Installed Size/ { printf "   %-30s %s\n", n, $2 }'
     case ${1:-} in
         rm|remove|clean)
-            ask "Remove them?" y && as_root pacman -Rns -- "${orphans[@]}" ;;
+            ask "Remove them?" y && pac -Rns -- "${orphans[@]}" ;;
         *) printf '\n'; msg "Remove them with: cmaal orphans rm" ;;
     esac
 }

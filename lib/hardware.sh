@@ -98,7 +98,7 @@ cmd_drivers() {
     else
         ask "Install the missing packages (${missing[*]})?" y || return 0
     fi
-    as_root pacman -S --needed -- "${missing[@]}"
+    pac -S --needed -- "${missing[@]}"
     msg "Reboot to load new drivers and microcode."
 }
 
@@ -115,7 +115,7 @@ cmd_gaming() {
         ask "Enable multilib in $PACMAN_CONF?" y || { warn "gaming setup needs multilib, stopping"; return 1; }
         enable_multilib
         # a full upgrade, not just -Sy: partial upgrades break Arch
-        as_root pacman -Syu || return 1
+        pac -Syu || return 1
     else
         ok "multilib is enabled"
     fi

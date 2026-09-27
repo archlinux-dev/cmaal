@@ -48,7 +48,7 @@ flatpak_find() {
         done
     done
 
-    [[ -z $CMAAL_YES ]] && has_tty || return 1
+    [[ -z $CMAAL_BATCH ]] && has_tty || return 1
     printf '%s::%s No exact flatpak for "%s", closest matches:\n' "$C_BLUE$C_BOLD" "$C_RESET" "$q" >/dev/tty
     for i in "${!hits[@]}"; do
         printf '   %s%d)%s %s\n' "$C_CYAN" "$((i + 1))" "$C_RESET" "${hits[i]%%$'\t'*}" >/dev/tty
@@ -65,11 +65,10 @@ flatpak_find() {
 cmd_install() {
     need_arch
     local -a flags=() pkgs=() repo=() aur=() flat=() missing=() rest=() found=()
-    local a p hit fp_yes=()
+    local a p hit
     for a in "$@"; do
         if [[ $a == -* ]]; then
             flags+=("$a")
-            [[ $a == --noconfirm ]] && { CMAAL_YES=1; fp_yes=(-y); }
         else
             pkgs+=("$a")
         fi
@@ -128,13 +127,13 @@ cmd_install() {
     return "$rc"
 }
 
-# Installs the caller's repo/aur/flat arrays, using its flags and fp_yes.
+# Installs the caller's repo/aur/flat arrays, using its flags.
 # (bash functions see the locals of the function that called them)
 install_resolved() {
     local rc=0 hit
     if (( ${#repo[@]} )); then
         section "pacman -S ${repo[*]}"
-        as_root pacman -S "${flags[@]}" -- "${repo[@]}" || rc=1
+        pac -S "${flags[@]}" -- "${repo[@]}" || rc=1
     fi
 
     if (( ${#aur[@]} )); then
@@ -149,7 +148,7 @@ install_resolved() {
             rc=1
         elif [[ -n $HELPER ]]; then
             section "$HELPER -S ${aur[*]}"
-            if "$HELPER" -S "${flags[@]}" -- "${aur[@]}"; then
+            if aurh -S "${flags[@]}" -- "${aur[@]}"; then
                 aur_remember "${aur[@]}"
             else
                 rc=1
@@ -161,7 +160,7 @@ install_resolved() {
 
     for hit in "${flat[@]}"; do
         section "flatpak install ${hit#*$'\t'}"
-        flatpak install --or-update "${fp_yes[@]}" "${hit%%$'\t'*}" "${hit#*$'\t'}" || rc=1
+        fpk install --or-update "${hit%%$'\t'*}" "${hit#*$'\t'}" || rc=1
     done
 
     return "$rc"
@@ -218,11 +217,7 @@ cmd_pkginfo() {
 cmd_upgrade() {
     need_arch
     local op=${1:--Syu}; shift || true
-    local -a extra=("$@") fp_yes=()
-    local a
-    for a in "${extra[@]}"; do
-        [[ $a == --noconfirm ]] && { CMAAL_YES=1; fp_yes=(-y); }
-    done
+    local -a extra=("$@")
 
     check_news_before_upgrade || die "upgrade aborted"
     aur_upgrade_check || die "upgrade aborted"
@@ -235,15 +230,15 @@ cmd_upgrade() {
     local rc=0
     if [[ -n $HELPER ]]; then
         section "$HELPER $op (repos + AUR)"
-        "$HELPER" "$op" "${extra[@]}" || rc=1
+        aurh "$op" "${extra[@]}" || rc=1
     else
         section "pacman $op"
-        as_root pacman "$op" "${extra[@]}" || rc=1
+        pac "$op" "${extra[@]}" || rc=1
     fi
 
     if use_flatpak; then
         section "flatpak update"
-        flatpak update "${fp_yes[@]}" || rc=1
+        fpk update || rc=1
     fi
 
     post_upgrade_checks
@@ -279,14 +274,14 @@ post_upgrade_checks() {
 passthrough() {
     need_arch
     if [[ -n $HELPER ]]; then
-        "$HELPER" "$@"
+        aurh "$@"
         return
     fi
     case $1 in
         -Q*|-T*|-Si*|-Ss*|-Sg*|-Sl*|-F|-Fl*|-Fx*|-Fo*|-Fs*|-V|--version|-h|--help)
             pacman "$@" ;;
         *)
-            as_root pacman "$@" ;;
+            pac "$@" ;;
     esac
 }
 
@@ -314,9 +309,8 @@ preview_cmd() {
 cmd_pick_install() {
     need_arch
     need_fzf || die "the package picker needs fzf (or use: cmaal -S <package>)"
-    local -a flags=("$@") repo=() aur=() flat=() fp_yes=() picked=()
+    local -a flags=("$@") repo=() aur=() flat=() picked=()
     local a line src name extra
-    for a in "${flags[@]}"; do [[ $a == --noconfirm ]] && fp_yes=(-y); done
 
     msg "Loading package lists (repos, AUR$(use_flatpak && printf ', flatpak'))..."
     mapfile -t picked < <(
@@ -375,7 +369,7 @@ cmd_pick_remove() {
     fi
     if (( ${#fp[@]} )); then
         section "flatpak uninstall ${fp[*]}"
-        flatpak uninstall "${fp[@]}" || rc=1
+        fpk uninstall "${fp[@]}" || rc=1
     fi
     return "$rc"
 }

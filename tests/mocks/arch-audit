@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+printf 'arch-audit %s\n' "$*" >>"${MOCK_LOG:?}"
+case "$*" in
+    -q) printf 'openssl\nsudo\n' ;;
+    -uq) printf 'openssl\n' ;;
+    *) printf 'Package openssl is affected by CVE-2026-0001. High risk!. Update to at least 3.3.2-1!\nPackage sudo is affected by CVE-2026-0002. Medium risk!\n' ;;
+esac

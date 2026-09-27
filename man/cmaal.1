@@ -9,6 +9,10 @@ cmaal \- a multitool for Arch Linux
 .B cmaal
 .RB { \-S | \-Ss | \-Si | \-Syu | \-Syyu | \-R ...}
 .RI [ package ...]
+.SH QUICK START
+Type
+.B cmaal
+on its own for a menu of everything, with search.
 .SH DESCRIPTION
 .B cmaal
 is one command for everything package related on Arch Linux. It looks for
@@ -20,10 +24,15 @@ keeps itself up to date.
 Any pacman style flag cmaal does not handle itself is passed straight to
 the AUR helper, or to pacman when there is none.
 .PP
-Add
+cmaal answers questions for you (see
+.BR AUTO_CONFIRM ):
+every question gets its default answer, and pacman, yay, paru, pikaur and
+flatpak are run without their own questions and menus. Things you have to
+type in, like a package name, are still asked.
+.B \-\-confirm
+asks for one command,
 .B \-\-noconfirm
-to any command to skip questions. cmaal then takes each question's default
-answer, like pacman does.
+also skips everything you would type (for scripts).
 .SH PACKAGE COMMANDS
 .TP
 .BI "\-S " package...
@@ -87,6 +96,16 @@ The largest installed packages.
 .TP
 .RB "helper " [ "install yay" | "install paru" ]
 Show the AUR helper in use, or build and install one.
+.SH MENU AND SETUP
+.TP
+.B cmaal
+Without a command, in a terminal: a searchable menu of everything cmaal can
+do. Commands run from it; afterwards you are back in the menu.
+.TP
+.B setup
+The first-run questions: language, auto-confirm, AUR helper, flatpak, update
+alerts, command-not-found helper. Runs by itself the first time you open the
+menu.
 .SH ROLLBACK COMMANDS
 .TP
 .B undo
@@ -186,6 +205,26 @@ inside it with arch-chroot. Every command is shown and confirmed first.
 Copy your config files and package list into a git repository, and push it
 when a remote is set. Private SSH keys, GPG keys, tokens and other secrets are
 never copied.
+.TP
+.RB "security " [ check | audit | firewall " \fIon\fR|\fIoff\fR|\fIstatus\fR|\fIallow port\fR]"
+Check pending updates, known vulnerabilities (arch-audit), the firewall, ports
+open to the network, SSH settings and failed SSH logins.
+.B audit
+lists the vulnerabilities,
+.B firewall on
+sets up ufw: incoming blocked, outgoing allowed, SSH allowed when sshd runs.
+.TP
+.RB "power " [ status | "set \fIprofile\fR" | battery ]
+Battery charge, health compared to new, charge cycles, time left, and the
+power profile (performance, balanced, power-saver).
+.TP
+.B stats
+Your Arch history from the pacman log: changes per month, most upgraded
+packages, biggest single change, days since the last full upgrade.
+.TP
+.RB "cnf " [ install | remove | status ]
+A command-not-found helper for bash, zsh and fish: typing a missing program
+tells you which package has it.
 .SH DESKTOP COMMANDS
 .TP
 .RB "wifi " [ connect " [\fIname\fR] | " list " | " status " | " on " | " off " | " forget " | " share ]
@@ -292,6 +331,23 @@ a bash file.
 .B cmaal config
 creates it from the defaults in
 .IR /usr/share/cmaal/config.default .
+.TP
+.B AUTO_CONFIRM
+.B yes
+(default): every question takes its default answer, and the package tools get
+their no-questions flags.
+.B all
+answers yes to everything, even the few questions that default to no.
+.B no
+asks like before.
+.TP
+.B MENU_ON_START
+.B yes
+(default):
+.B cmaal
+alone opens the menu.
+.B no
+shows the help.
 .TP
 .B AUTO_UPDATE
 .BR notify " (default), " auto " or " off .

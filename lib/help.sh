@@ -12,6 +12,8 @@ help_text() {
     cat <<EOF
 ${C_BOLD}cmaal${C_RESET} v$CMAAL_VERSION  a multitool for Arch Linux
 
+  cmaal, cmaal menu          open the menu (everything, with search)
+
 ${C_BOLD}PACKAGES${C_RESET}  (checks pacman, then the AUR, then flatpak)
   cmaal -S <pkg>...          install from wherever the package exists
   cmaal -S                   browse ALL packages with fzf (TAB to pick several)
@@ -60,6 +62,9 @@ ${C_BOLD}SYSTEM${C_RESET}
   cmaal alerts on|off|now    desktop notification when updates or news arrive
   cmaal rescue               fix a system that won't boot (from the Arch USB too)
   cmaal backup [init|add|list|restore]   back up your config files to git
+  cmaal security [audit|firewall on|off]   vulnerabilities, firewall, open ports, SSH
+  cmaal power [set <profile>]  battery health, power profiles
+  cmaal stats                your Arch history: changes per month, top upgrades
 
 ${C_BOLD}DESKTOP${C_RESET}
   cmaal wifi [list|share|forget|on|off]  pick and join Wi-Fi, QR code to share
@@ -90,12 +95,15 @@ ${C_BOLD}CMAAL${C_RESET}
   cmaal self-update [--force]   update cmaal
   cmaal whatsnew [version|all]  what changed in this version
   cmaal plugins [new|edit|rm]   your own commands (~/.config/cmaal/plugins)
+  cmaal setup                   the first-run questions again
+  cmaal cnf install|remove      "command not found" suggests the package
   cmaal config [edit|show|path|reset]
   cmaal uninstall
   cmaal help [word]          this help, or only the lines matching a word
   cmaal -V, --version
 
-Add ${C_BOLD}--noconfirm${C_RESET} to skip questions (the default answer is used).
+cmaal answers questions for you with their default (AUTO_CONFIRM in cmaal config).
+Add ${C_BOLD}--confirm${C_RESET} to be asked this time, ${C_BOLD}--noconfirm${C_RESET} for scripts.
 Full manual: ${C_BOLD}man cmaal${C_RESET}
 EOF
 }

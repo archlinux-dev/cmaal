@@ -1,5 +1,14 @@
 # cmaal config. This file is sourced by bash.
 
+# Answer questions for me: yes (default answer, almost always yes; also
+# passes --noconfirm to pacman/yay/paru/flatpak), all (yes to everything,
+# even deleting caches or resetting the keyring), no (always ask me).
+# One command can still ask with: cmaal <command> --confirm
+AUTO_CONFIRM="yes"
+
+# `cmaal` on its own opens the menu: yes / no (no = show the help)
+MENU_ON_START="yes"
+
 # Self update: auto (update silently), notify (just tell me), off
 AUTO_UPDATE="notify"
 UPDATE_INTERVAL_HOURS=24

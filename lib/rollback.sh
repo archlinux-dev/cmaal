@@ -105,16 +105,16 @@ cmd_undo() {
     if (( ${#missing[@]} )); then
         ask "Undo the rest anyway?" n || return 1
     else
-        ask "Undo it?" n || return 1
+        ask "Undo it?" y || return 1
     fi
     local rc=0
     if (( ${#install[@]} )); then
         section "Restoring previous versions"
-        as_root pacman -U -- "${install[@]}" || rc=1
+        pac -U -- "${install[@]}" || rc=1
     fi
     if (( ${#remove[@]} )); then
         section "Removing newly installed packages"
-        as_root pacman -R -- "${remove[@]}" || rc=1
+        pac -R -- "${remove[@]}" || rc=1
     fi
     (( rc == 0 )) && ok "undone. Run 'cmaal undo' again to redo."
     return "$rc"
@@ -167,7 +167,7 @@ cmd_downgrade() {
         pick=$(cut -f3 <<<"${options[i - 1]}")
     fi
 
-    as_root pacman -U -- "$pick" || return 1
+    pac -U -- "$pick" || return 1
     msg "Tip: keep $name at this version with: cmaal hold $name"
 }
 
@@ -271,7 +271,7 @@ pkglist_import() {
     need_arch
     local file=$1 line part=""
     [[ -r $file ]] || die "cannot read $file"
-    local -a repo=() aur=() flat=() gone=() flags=(--needed) fp_yes=()
+    local -a repo=() aur=() flat=() gone=() flags=(--needed)
     while IFS= read -r line || [[ -n $line ]]; do
         line=${line%%#*}
         line=${line#"${line%%[![:space:]]*}"}
@@ -304,6 +304,5 @@ pkglist_import() {
     (( ${#gone[@]} )) && warn "no longer in the repos, skipping: ${gone[*]}"
     (( ${#repo[@]} + ${#aur[@]} + ${#flat[@]} )) || die "nothing to install"
     ask "Install everything that's missing?" y || return 1
-    [[ -n $CMAAL_YES ]] && { flags+=(--noconfirm); fp_yes=(-y); }
     install_resolved
 }

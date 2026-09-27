@@ -131,7 +131,7 @@ EOF
             [[ -n $name ]] || die "usage: cmaal plugins rm <name>"
             file="$CONFIG_DIR/plugins/$name.sh"
             [[ -e $file ]] || die "no plugin named $name in $CONFIG_DIR/plugins"
-            ask "Delete $file?" n || return 1
+            ask "Delete $file?" y || return 1
             rm -f -- "$file" && ok "removed $name"
             ;;
         dir|path) printf '%s\n' "$CONFIG_DIR/plugins" ;;

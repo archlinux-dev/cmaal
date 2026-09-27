@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# fake ss: one port open to the network, one only on localhost
+case "$*" in
+    *p*) printf 'tcp LISTEN 0 128 0.0.0.0:22 0.0.0.0:* users:(("sshd",pid=1,fd=3))\ntcp LISTEN 0 128 127.0.0.1:631 0.0.0.0:* users:(("cupsd",pid=2,fd=7))\n' ;;
+    *) printf 'LISTEN 0 128 0.0.0.0:22 0.0.0.0:*\nLISTEN 0 128 127.0.0.1:631 0.0.0.0:*\nLISTEN 0 128 [::1]:5432 [::]:*\n' ;;
+esac

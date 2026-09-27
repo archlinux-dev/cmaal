@@ -1,6 +1,8 @@
 # cmaal
 
-A multitool for Arch Linux. One command instead of juggling `pacman`, `yay`, `paru` and `flatpak`, plus AUR safety checks, rollbacks, Wi-Fi and bluetooth, gaming setup, rescue, backups, SSH shortcuts and your own plugins. It installs as a real pacman package, and speaks English and German.
+A multitool for Arch Linux. One command instead of juggling `pacman`, `yay`, `paru` and `flatpak`, plus AUR safety checks, rollbacks, security checks, battery info, Wi-Fi and bluetooth, gaming setup, rescue, backups, SSH shortcuts and your own plugins. It installs as a real pacman package, answers the "are you sure?" questions for you, and speaks English and German.
+
+Just type `cmaal` for a menu of everything.
 
 ```
 $ cmaal -S discord visual-studio-code-bin spotify
@@ -13,10 +15,14 @@ $ cmaal -S discord visual-studio-code-bin spotify
 ## Contents
 
 - [Install](#install)
+- [The menu](#the-menu)
+- [No more questions](#no-more-questions)
 - [Packages](#packages)
 - [AUR safety](#aur-safety)
 - [Rollback](#rollback)
 - [System](#system)
+- [Security](#security)
+- [Battery and power](#battery-and-power)
 - [Update alerts](#update-alerts)
 - [Desktop](#desktop)
 - [Rescue](#rescue)
@@ -65,6 +71,32 @@ cd packaging && makepkg -si   # build the package by hand
 **Uninstall:** `sudo pacman -Rns cmaal` (or `cmaal uninstall`).
 
 **Coming from 0.1 / 0.2?** Just run `cmaal self-update`. It moves your old single-file install over to the package automatically.
+
+## The menu
+
+Type `cmaal` on its own. You get a searchable menu of everything cmaal can do: type a few letters, press Enter, and the command runs. Afterwards you're back in the menu. It works without fzf too, as a numbered list.
+
+The first time, cmaal asks a few setup questions (language, auto-confirm, AUR helper, flatpak, update alerts, command-not-found helper). `cmaal setup` asks them again. With `MENU_ON_START="no"` in the config, `cmaal` alone shows the help instead.
+
+## No more questions
+
+cmaal answers "Proceed with installation?" and friends for you. Every question gets its default answer, which is almost always yes, and pacman, yay, paru, pikaur and flatpak run without their own questions: no yay clean-build, diff or edit menus, no paru review step.
+
+What still asks:
+
+- things only you know, like a Wi-Fi name, a package name or which partition to mount
+- your sudo password (sudo asks for that itself)
+- a few risky side steps, which default to **no**: overwriting an existing SSH key, a full keyring reset, deleting AUR build caches, deleting your config on uninstall, installing NVIDIA drivers, extra game launchers, a partial undo, and upgrading right after a snapshot failed
+
+Change it in `cmaal config`:
+
+| `AUTO_CONFIRM=` | What happens |
+| --- | --- |
+| `"yes"` (default) | default answers, no tool questions |
+| `"all"` | yes to absolutely everything, including the risky side steps |
+| `"no"` | ask me every time, like 1.x |
+
+`cmaal <command> --confirm` asks you for that one command anyway. The AUR safety cards are still shown before AUR installs, so you can see warnings scroll by.
 
 ## Packages
 
@@ -155,6 +187,40 @@ A new mesa broke your games? `cmaal downgrade mesa && cmaal hold mesa`, and late
 | `cmaal ip` | local and public IP addresses |
 | `cmaal sys` | system overview |
 | `cmaal doctor` | check optional tools and system health |
+| `cmaal stats` | your Arch history: changes per month, most upgraded packages, biggest change, days since the last upgrade |
+| `cmaal cnf install` | type a program you don't have and the shell tells you which package has it (bash, zsh, fish) |
+
+## Security
+
+```bash
+cmaal security
+```
+
+```
+==> Security check
+   ! 3 update(s) waiting (security fixes come with them)
+   ! 2 installed packages have known vulnerabilities, 1 fixed by updating
+   + firewall active (ufw)
+   ! ports open to the network: 22
+   + SSH root login is off
+   + SSH only accepts keys
+   + no failed SSH logins in the last 24 hours
+```
+
+| Command | What it does |
+| --- | --- |
+| `cmaal security` | the check above |
+| `cmaal security audit` | list known vulnerabilities (arch-audit, from security.archlinux.org) |
+| `cmaal security firewall on` | set up ufw: incoming blocked, outgoing allowed, SSH kept open if sshd runs |
+| `cmaal security firewall allow <port>` | open a port |
+| `cmaal security firewall off / status` | the rest |
+
+## Battery and power
+
+| Command | What it does |
+| --- | --- |
+| `cmaal power` | battery charge, health compared to new, charge cycles, time left, power profile |
+| `cmaal power set performance` | also `balanced` or `power-saver` (needs power-profiles-daemon) |
 
 ## Update alerts
 
@@ -278,6 +344,8 @@ Set `AUTO_UPDATE="auto"` in the config to update without asking, or `"off"` to t
 `cmaal config` opens `~/.config/cmaal/config` (created from `/usr/share/cmaal/config.default`):
 
 ```bash
+AUTO_CONFIRM="yes"             # yes | all | no  (see "No more questions")
+MENU_ON_START="yes"            # cmaal alone opens the menu
 AUTO_UPDATE="notify"           # auto | notify | off
 UPDATE_INTERVAL_HOURS=24
 AUR_HELPER="auto"              # auto | yay | paru | pikaur | none
@@ -321,6 +389,12 @@ cmaal is plain bash, split into modules:
     rescue.sh               rescue
     backup.sh               backup
     plugins.sh              plugins and hooks
+    menu.sh                 the menu (cmaal on its own)
+    setup.sh                first-run setup
+    security.sh             security check, audit, firewall
+    power.sh                battery and power profiles
+    cnf.sh                  command-not-found helper
+    stats.sh                your Arch history
     selfupdate.sh           version, self-update, whatsnew, config, uninstall
     help.sh                 help text
 /usr/share/cmaal/           default config, logo, changelog, translations (i18n/)

@@ -16,6 +16,10 @@ SSH_NEW_TAB="no"              # yes: `cmaal ssh` opens hosts in a new kitty tab
 SNAPSHOT_BEFORE_UPGRADE="auto" # auto | yes | no  (snapper/timeshift before -Syu)
 WEATHER_CITY=""               # default city for `cmaal weather`, empty = auto
 NOTIFY_AFTER_SECONDS=60       # desktop notification when an upgrade takes longer (0 = off)
+AUTO_CONFIRM="${CMAAL_AUTO_CONFIRM:-yes}" # yes: answer every question with its default (almost
+                              # always yes), also for pacman/yay/paru/flatpak
+                              # all: yes to absolutely everything | no: ask me
+MENU_ON_START="yes"           # `cmaal` alone opens the menu (no = show the help)
 AUR_CHECK="yes"               # check AUR packages before installing / upgrading
 LANGUAGE_UI="auto"            # auto | en | de   (auto follows $LANG)
 ALERTS_EVERY="6h"             # how often `cmaal alerts` checks, systemd time span
@@ -84,7 +88,62 @@ die()     { printf '%s%s%s %s\n' "$C_RED$C_BOLD" "$(t error)" "$C_RESET" "$(t "$
 section() { printf '\n%s==> %s%s\n' "$C_MAGENTA$C_BOLD" "$(t "$*")" "$C_RESET"; }
 have()    { command -v "$1" >/dev/null 2>&1; }
 
+# CMAAL_YES   : questions take their default answer, tools get --noconfirm
+# CMAAL_BATCH : nobody is typing (--noconfirm, scripts): no input prompts either
 CMAAL_YES="${CMAAL_YES:-}"
+CMAAL_BATCH="${CMAAL_BATCH:-}"
+case $AUTO_CONFIRM in
+    yes) CMAAL_YES=1 ;;
+    all) CMAAL_YES=1; CMAAL_ASSUME_YES=1 ;;
+esac
+
+# --noconfirm handling for the tools cmaal drives. Only for commands that
+# change something (-S, -R, -U), so plain queries stay untouched.
+tool_yes_flags() {
+    local tool=$1 op=${2:-}
+    [[ -n $CMAAL_YES ]] || return 0
+    case $op in -S*|-R*|-U*|"") ;; *) return 0 ;; esac
+    printf '%s\n' "$([[ $tool == flatpak ]] && echo -y || echo --noconfirm)"
+    # the helpers' extra questions (clean build? show diff? edit PKGBUILD?)
+    # only come up when building, so only -S gets these
+    [[ $op == -S* ]] || return 0
+    case $tool in
+        yay) printf '%s\n' --answerclean None --answerdiff None --answeredit None \
+                --nocleanmenu --nodiffmenu --noeditmenu ;;
+        paru) printf '%s\n' --skipreview ;;
+        pikaur) printf '%s\n' --noedit --nodiff ;;
+    esac
+}
+
+# pac -S --needed -- pkgs  ->  sudo pacman -S --noconfirm --needed -- pkgs
+# (the extra flags go right after the operation, never after "--")
+pac() {
+    local op=$1
+    shift
+    local -a yes=()
+    mapfile -t yes < <(tool_yes_flags pacman "$op")
+    as_root pacman "$op" "${yes[@]}" "$@"
+}
+
+# the same for the AUR helper (it asks for sudo itself)
+aurh() {
+    local op=$1
+    shift
+    local -a yes=()
+    mapfile -t yes < <(tool_yes_flags "$HELPER" "$op")
+    "$HELPER" "$op" "${yes[@]}" "$@"
+}
+
+fp_yes_flags() { tool_yes_flags flatpak; }
+
+# fpk install|update|uninstall args... with -y when confirming automatically
+fpk() {
+    local op=$1
+    shift
+    local -a yes=()
+    mapfile -t yes < <(fp_yes_flags)
+    flatpak "$op" "${yes[@]}" "$@"
+}
 
 # true when we can actually talk to a terminal (not piped, not in cron)
 has_tty() { { : </dev/tty; } 2>/dev/null; }
@@ -112,7 +171,7 @@ ask() {
 prompt() {
     local question def=${2:-} reply
     question=$(t "$1")
-    if [[ -n $CMAAL_YES ]] || ! has_tty; then
+    if [[ -n $CMAAL_BATCH ]] || ! has_tty; then
         printf '%s\n' "$def"
         return
     fi
@@ -182,7 +241,7 @@ cmd_helper() {
             need_arch
             have "$name" && { ok "$name is already installed"; return 0; }
             msg "Installing build dependencies (git, base-devel)"
-            as_root pacman -S --needed --noconfirm git base-devel || die "could not install git/base-devel"
+            pac -S --needed --noconfirm git base-devel || die "could not install git/base-devel"
             tmp=$(mktemp -d)
             msg "Building $name-bin from the AUR"
             git clone --depth 1 "https://aur.archlinux.org/${name}-bin.git" "$tmp/$name" || die "git clone failed"
@@ -201,7 +260,7 @@ cmd_helper() {
 need_fzf() {
     have fzf && return 0
     have pacman || return 1
-    ask "This needs fzf. Install it now?" y && as_root pacman -S --needed fzf && have fzf
+    ask "This needs fzf. Install it now?" y && pac -S --needed fzf && have fzf
 }
 
 # true if any argument is not a flag

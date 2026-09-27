@@ -37,6 +37,12 @@ _cmaal() {
         'kernel:running vs installed kernels'
         'disk:disk usage'
         'whatsnew:what changed in this version'
+        'menu:open the menu'
+        'setup:first-run questions'
+        'security:security check and firewall'
+        'power:battery and power profiles'
+        'stats:your Arch history'
+        'cnf:command-not-found helper'
         'review:AUR safety check'
         'alerts:update notifications'
         'wifi:pick and join Wi-Fi'
@@ -104,6 +110,9 @@ _cmaal() {
             fi
             ;;
         logs) compadd -- prev -f ${(f)"$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk '{ sub(/\.service$/, "", $1); print $1 }')"} ;;
+        security) if (( CURRENT == 3 )); then compadd -- check audit firewall; else compadd -- on off status allow; fi ;;
+        power) if (( CURRENT == 3 )); then compadd -- status set battery; else compadd -- performance balanced power-saver; fi ;;
+        cnf) compadd -- install remove status ;;
         review) compadd -- ${(f)"$(pacman -Qqm 2>/dev/null)"} ;;
         alerts) compadd -- on off now status ;;
         wifi) compadd -- connect list status on off forget share ;;

@@ -13,7 +13,7 @@ cmd_clean() {
     section "Orphaned packages"
     if (( ${#orphans[@]} )); then
         printf '   %s\n' "${orphans[*]}"
-        ask "Remove ${#orphans[@]} orphan(s)?" y && as_root pacman -Rns -- "${orphans[@]}"
+        ask "Remove ${#orphans[@]} orphan(s)?" y && pac -Rns -- "${orphans[@]}"
     else
         ok "no orphans"
     fi
@@ -24,7 +24,7 @@ cmd_clean() {
         as_root paccache -ruk0
     else
         warn "paccache not found (pacman-contrib). Falling back to pacman -Sc"
-        ask "Run pacman -Sc?" y && as_root pacman -Sc
+        ask "Run pacman -Sc?" y && pac -Sc
     fi
 
     local d
@@ -36,7 +36,7 @@ cmd_clean() {
 
     if use_flatpak; then
         section "Unused flatpak runtimes"
-        flatpak uninstall --unused -y
+        fpk uninstall --unused
     fi
 
     if have journalctl; then
@@ -50,7 +50,7 @@ cmd_mirrors() {
     need_arch
     if ! have reflector; then
         ask "reflector is not installed. Install it?" y || return 1
-        as_root pacman -S --needed reflector || return 1
+        pac -S --needed reflector || return 1
     fi
     local -a args=(--latest 20 --protocol https --sort rate --save "$MIRRORLIST")
     [[ -n ${1:-} ]] && args+=(--country "$1")
@@ -116,7 +116,7 @@ cmd_fix() {
     section "Keyring"
     msg "An outdated keyring causes most 'invalid or corrupted package (PGP signature)' errors"
     if ask "Update archlinux-keyring?" y; then
-        as_root pacman -Sy --needed --noconfirm archlinux-keyring && ok "keyring up to date"
+        pac -Sy --needed archlinux-keyring && ok "keyring up to date"
     fi
     if ask "Still getting key errors? Fully reset the pacman keyring?" n; then
         as_root rm -rf /etc/pacman.d/gnupg

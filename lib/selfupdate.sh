@@ -44,7 +44,7 @@ cmd_self_update() {
     # installed from the AUR: that package updates itself through the helper
     if [[ $mode == package ]] && [[ $(pacman -Qqo -- "$CMAAL_BIN" 2>/dev/null) == cmaal-git ]]; then
         [[ -n $HELPER ]] || die "cmaal-git came from the AUR, update it with your AUR helper"
-        "$HELPER" -S --needed cmaal-git && ok "$(tf 'updated to v%s' "$remote")"
+        aurh -S --needed cmaal-git && ok "$(tf 'updated to v%s' "$remote")"
         return
     fi
     msg "Updating cmaal v$CMAAL_VERSION -> v$remote ($mode install)"
@@ -184,12 +184,12 @@ cmd_uninstall() {
     mode=$(install_mode)
     case $mode in
         package)
-            ask "Remove the cmaal package (pacman -Rns cmaal)?" n || return 1
-            as_root pacman -Rns cmaal || return 1
+            ask "Remove the cmaal package (pacman -Rns cmaal)?" y || return 1
+            pac -Rns cmaal || return 1
             ;;
         manual)
             prefix=${CMAAL_PREFIX:-$(dirname "$(dirname "$CMAAL_BIN")")}
-            ask "Remove cmaal from $prefix?" n || return 1
+            ask "Remove cmaal from $prefix?" y || return 1
             local -a files=(
                 "$prefix/bin/cmaal" "$prefix/lib/cmaal" "$prefix/share/cmaal" "$prefix/share/doc/cmaal"
                 "$prefix/share/licenses/cmaal" "$prefix/share/man/man1/cmaal.1"
