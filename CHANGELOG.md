@@ -2,6 +2,10 @@
 
 All notable changes to cmaal. `cmaal whatsnew` shows the entry for your installed version.
 
+## Unreleased
+
+- **Fixed:** the command-not-found helper said "It's in the package usr/bin/rsync. Install it with: cmaal -S bin/rsync". pacman answers a file path with "usr/bin/rsync is owned by extra/rsync", and cmaal read the wrong word. It now says `cmaal -S rsync`. `cmaal provides` had the same mistake.
+
 ## 2.1.0
 
 Bug fix release.

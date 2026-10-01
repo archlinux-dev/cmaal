@@ -22,8 +22,7 @@ cmd_cnf_lookup() {
     fi
     out=$(pacman -F -- "usr/bin/$name" 2>/dev/null)
     [[ -n $out ]] || return 127
-    # lines like "extra/htop 3.3.0-1" (plus the file lines, indented)
-    pkgs=$(awk '/^[^ ]/ { print $1 }' <<<"$out" | head -n 3)
+    pkgs=$(files_db_pkgs <<<"$out" | head -n 3)
     if [[ $(grep -c . <<<"$pkgs") == 1 ]]; then
         printf '  %s\n' "$(tf "It's in the package %s. Install it with: cmaal -S %s" "$pkgs" "${pkgs#*/}")" >&2
     else

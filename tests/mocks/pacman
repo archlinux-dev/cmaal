@@ -48,7 +48,12 @@ case $op in
     -F)
         q=${names[0]##*/}
         repo_has "$q" || exit 1
-        awk -v n="$q" '$2 == n { printf "%s/%s %s\n    usr/bin/%s\n", $1, $2, $3, $2 }' "$F/repo.txt"
+        # like the real one: a path gets "is owned by", a bare name a list
+        if [[ ${names[0]} == */* ]]; then
+            awk -v n="$q" '$2 == n { printf "usr/bin/%s is owned by %s/%s %s\n", $2, $1, $2, $3 }' "$F/repo.txt"
+        else
+            awk -v n="$q" '$2 == n { printf "%s/%s %s\n    usr/bin/%s\n", $1, $2, $3, $2 }' "$F/repo.txt"
+        fi
         ;;
     -Flq) repo_has "${names[0]}" || exit 1; printf 'usr/\nusr/bin/%s\n' "${names[0]}" ;;
     *) exit 0 ;;

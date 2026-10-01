@@ -221,6 +221,9 @@ if test_case "provides"; then
     run provides htop
     out_has "extra/htop"
     out_has "cmaal -S htop"
+    out_lacks "cmaal -S bin/"
+    run provides /usr/bin/htop
+    out_has "cmaal -S htop"
     run provides nothere
     rc_is 1
 fi
@@ -610,6 +613,7 @@ if test_case "command-not-found helper"; then
     OUT=$("$CMAAL" __cnf htop 2>&1); RC=$?
     out_has "htop: command not found"
     out_has "It's in the package extra/htop. Install it with: cmaal -S htop"
+    out_lacks "usr/bin/htop"
     rc_is 127
     OUT=$("$CMAAL" __cnf nothingatall 2>&1)
     out_has "command not found"

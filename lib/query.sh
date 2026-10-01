@@ -102,6 +102,14 @@ ensure_files_db() {
     as_root pacman -Fy
 }
 
+# repo/package names from pacman -F output. A path prints
+# "usr/bin/htop is owned by extra/htop 3.3.0-1", a bare name prints
+# "extra/htop 3.3.0-1" with its files indented below.
+files_db_pkgs() {
+    awk '/ is owned by / { for (i = 1; i < NF; i++) if ($i == "by") { print $(i + 1); break }; next }
+         /^[^ ]/ { print $1 }'
+}
+
 # "command not found"? find out which package would give it to you
 cmd_provides() {
     need_arch
@@ -121,8 +129,8 @@ cmd_provides() {
     fi
     printf '%s\n' "$out"
     local pkg
-    pkg=$(awk 'NR == 1 { sub(/^[^\/]*\//, "", $1); print $1 }' <<<"$out")
-    [[ -n $pkg ]] && msg "Install it with: cmaal -S $pkg"
+    pkg=$(files_db_pkgs <<<"$out" | head -n 1)
+    [[ -n $pkg ]] && msg "Install it with: cmaal -S ${pkg#*/}"
 }
 
 # ---------------------------------------------------------------------------
