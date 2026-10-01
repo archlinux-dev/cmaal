@@ -1,4 +1,4 @@
-# Maintainer: archlinux-dev <https://github.com/archlinux-dev>
+# Maintainer: femboyss <https://github.com/femboyss>
 #
 # AUR package for cmaal. Install with: yay -S cmaal-git
 # Publish / refresh it with packaging/aur/publish.sh
@@ -9,7 +9,7 @@ pkgver=2.1.0.r0.g0000000
 pkgrel=1
 pkgdesc="A multitool for Arch Linux: one command for pacman, the AUR and flatpak, plus SSH, rollbacks and system care"
 arch=('any')
-url="https://github.com/archlinux-dev/cmaal"
+url="https://github.com/femboyss/cmaal"
 license=('Apache-2.0')
 depends=('bash' 'pacman' 'curl' 'coreutils' 'findutils' 'gawk' 'grep' 'sed' 'gzip' 'procps-ng')
 makedepends=('git' 'make')
@@ -40,7 +40,7 @@ optdepends=(
 )
 provides=('cmaal')
 conflicts=('cmaal')
-source=("$_pkgname::git+https://github.com/archlinux-dev/cmaal.git")
+source=("$_pkgname::git+https://github.com/femboyss/cmaal.git")
 sha256sums=('SKIP')
 
 pkgver() {

@@ -2,7 +2,7 @@ pkgbase = cmaal-git
 	pkgdesc = A multitool for Arch Linux: one command for pacman, the AUR and flatpak, plus SSH, rollbacks and system care
 	pkgver = 2.1.0.r0.g0000000
 	pkgrel = 1
-	url = https://github.com/archlinux-dev/cmaal
+	url = https://github.com/femboyss/cmaal
 	arch = any
 	license = Apache-2.0
 	makedepends = git
@@ -42,7 +42,7 @@ pkgbase = cmaal-git
 	optdepends = power-profiles-daemon: power profiles in cmaal power
 	provides = cmaal
 	conflicts = cmaal
-	source = cmaal::git+https://github.com/archlinux-dev/cmaal.git
+	source = cmaal::git+https://github.com/femboyss/cmaal.git
 	sha256sums = SKIP
 
 pkgname = cmaal-git

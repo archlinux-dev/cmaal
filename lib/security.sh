@@ -1,6 +1,6 @@
 # shellcheck shell=bash
 # cmaal: security check, known vulnerabilities, firewall
-# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/archlinux-dev/cmaal
+# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/femboyss/cmaal
 
 sec_ok()   { printf '   %s+%s %s\n' "$C_GREEN" "$C_RESET" "$(t "$*")"; _SEC_OK=$((_SEC_OK + 1)); }
 sec_warn() { printf '   %s!%s %s\n' "$C_YELLOW" "$C_RESET" "$(t "$*")"; _SEC_WARN=$((_SEC_WARN + 1)); }

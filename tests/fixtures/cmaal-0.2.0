@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # cmaal: a multitool for Arch Linux
-# https://github.com/archlinux-dev/cmaal
+# https://github.com/femboyss/cmaal
 #
 # One command for pacman, AUR helpers (yay, paru, pikaur) and flatpak,
 # plus SSH shortcuts, system maintenance and self updating.
@@ -8,7 +8,7 @@
 set -o pipefail
 
 CMAAL_VERSION="0.2.0"
-CMAAL_REPO="${CMAAL_REPO:-archlinux-dev/cmaal}"
+CMAAL_REPO="${CMAAL_REPO:-femboyss/cmaal}"
 CMAAL_BRANCH="${CMAAL_BRANCH:-main}"
 CMAAL_RAW="https://raw.githubusercontent.com/${CMAAL_REPO}/${CMAAL_BRANCH}"
 

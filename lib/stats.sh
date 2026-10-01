@@ -1,6 +1,6 @@
 # shellcheck shell=bash
 # cmaal: your Arch history from the pacman log
-# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/archlinux-dev/cmaal
+# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/femboyss/cmaal
 
 cmd_stats() {
     local log=$PACMAN_LOG

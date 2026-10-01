@@ -1,6 +1,6 @@
 # shellcheck shell=bash
 # cmaal: version, self update, what's new, config, uninstall
-# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/archlinux-dev/cmaal
+# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/femboyss/cmaal
 
 # ---------------------------------------------------------------------------
 # How was cmaal installed?

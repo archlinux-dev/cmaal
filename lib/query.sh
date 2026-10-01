@@ -1,6 +1,6 @@
 # shellcheck shell=bash
 # cmaal: questions about packages: updates, why, files, provides, pkgbuild, orphans
-# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/archlinux-dev/cmaal
+# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/femboyss/cmaal
 
 # ---------------------------------------------------------------------------
 # updates: what would -Syu do? (never installs anything)

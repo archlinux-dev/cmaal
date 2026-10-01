@@ -1,6 +1,6 @@
 # shellcheck shell=bash
 # cmaal: rescue, fix a system that doesn't boot
-# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/archlinux-dev/cmaal
+# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/femboyss/cmaal
 #
 # Two situations:
 #   * booted from an Arch USB stick (archiso): find your installed system,
@@ -8,7 +8,7 @@
 #   * booted normally but something is off: the same fixes, run directly
 #
 # From the USB stick cmaal isn't installed. Run it straight from git:
-#   pacman -Sy git && git clone https://github.com/archlinux-dev/cmaal && ./cmaal/bin/cmaal rescue
+#   pacman -Sy git && git clone https://github.com/femboyss/cmaal && ./cmaal/bin/cmaal rescue
 #
 # Every command is shown before it runs, and every step asks first.
 

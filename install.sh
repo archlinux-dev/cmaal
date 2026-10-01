@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # cmaal installer
 #
-#   curl -fsSL https://raw.githubusercontent.com/archlinux-dev/cmaal/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/femboyss/cmaal/main/install.sh | bash
 #
 # On Arch this builds cmaal as a real pacman package (makepkg -si), so
 # pacman tracks every file: `pacman -Qi cmaal`, `pacman -R cmaal`.
@@ -14,7 +14,7 @@
 
 set -euo pipefail
 
-REPO="${CMAAL_REPO:-archlinux-dev/cmaal}"
+REPO="${CMAAL_REPO:-femboyss/cmaal}"
 BRANCH="${CMAAL_BRANCH:-main}"
 RAW="https://raw.githubusercontent.com/${REPO}/${BRANCH}"
 TARBALL="https://github.com/${REPO}/archive/refs/heads/${BRANCH}.tar.gz"

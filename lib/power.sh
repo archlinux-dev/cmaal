@@ -1,6 +1,6 @@
 # shellcheck shell=bash
 # cmaal: battery health and power profiles
-# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/archlinux-dev/cmaal
+# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/femboyss/cmaal
 
 POWER_SUPPLY="${CMAAL_POWER_SUPPLY:-/sys/class/power_supply}"
 

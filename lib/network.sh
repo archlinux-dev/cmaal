@@ -1,6 +1,6 @@
 # shellcheck shell=bash
 # cmaal: wifi (NetworkManager) and bluetooth (bluez) pickers
-# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/archlinux-dev/cmaal
+# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/femboyss/cmaal
 
 # pick "prompt" <lines> -> the chosen line (fzf, or a numbered menu)
 pick() {

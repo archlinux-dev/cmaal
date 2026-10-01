@@ -1,6 +1,6 @@
 # shellcheck shell=bash
 # cmaal: install, search, info, upgrade, pickers
-# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/archlinux-dev/cmaal
+# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/femboyss/cmaal
 
 # ---------------------------------------------------------------------------
 # AUR RPC (works even without a helper installed)

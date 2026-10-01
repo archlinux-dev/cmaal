@@ -1,6 +1,6 @@
 # shellcheck shell=bash
 # cmaal: back up your config files (dotfiles) into a git repository
-# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/archlinux-dev/cmaal
+# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/femboyss/cmaal
 #
 # Files are copied into BACKUP_REPO keeping their path below $HOME
 # (~/.config/kitty/kitty.conf -> home/.config/kitty/kitty.conf), plus a

@@ -1,4 +1,4 @@
-# Maintainer: archlinux-dev <https://github.com/archlinux-dev>
+# Maintainer: femboyss <https://github.com/femboyss>
 #
 # Builds cmaal from git. install.sh and `cmaal self-update` use this file.
 # Build it yourself with:  makepkg -si
@@ -11,7 +11,7 @@ pkgver=2.1.0
 pkgrel=1
 pkgdesc="A multitool for Arch Linux: one command for pacman, the AUR and flatpak, plus SSH, rollbacks and system care"
 arch=('any')
-url="https://github.com/archlinux-dev/cmaal"
+url="https://github.com/femboyss/cmaal"
 license=('Apache-2.0')
 depends=('bash' 'pacman' 'curl' 'coreutils' 'findutils' 'gawk' 'grep' 'sed' 'gzip' 'procps-ng')
 makedepends=('git' 'make')
@@ -41,7 +41,7 @@ optdepends=(
     'ufw: firewall for cmaal security firewall'
     'power-profiles-daemon: power profiles in cmaal power'
 )
-_repo=${CMAAL_REPO:-archlinux-dev/cmaal}
+_repo=${CMAAL_REPO:-femboyss/cmaal}
 # CMAAL_GITREF can pin an exact commit (commit=<sha>), otherwise the branch is used
 source=("$pkgname::${CMAAL_SOURCE:-git+https://github.com/$_repo.git}#${CMAAL_GITREF:-branch=${CMAAL_BRANCH:-main}}")
 sha256sums=('SKIP')

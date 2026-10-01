@@ -1,6 +1,6 @@
 # shellcheck shell=bash
 # cmaal: AUR safety: package cards, warnings, PKGBUILD changes, audits
-# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/archlinux-dev/cmaal
+# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/femboyss/cmaal
 #
 # Anyone can upload to the AUR. The usual warning signs of a bad or
 # abandoned package: no maintainer, flagged out of date, brand new with no

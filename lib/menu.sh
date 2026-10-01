@@ -1,6 +1,6 @@
 # shellcheck shell=bash
 # cmaal: the main menu (just type `cmaal`)
-# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/archlinux-dev/cmaal
+# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/femboyss/cmaal
 #
 # Every entry runs a normal cmaal command in its own process, so a command
 # that stops with an error just brings you back to the menu.

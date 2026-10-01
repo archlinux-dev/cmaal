@@ -1,6 +1,6 @@
 # shellcheck shell=bash
 # cmaal: shared helpers: config, output, prompts, root, AUR helper detection
-# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/archlinux-dev/cmaal
+# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/femboyss/cmaal
 
 # ---------------------------------------------------------------------------
 # Defaults (override them in ~/.config/cmaal/config, see `cmaal config`)

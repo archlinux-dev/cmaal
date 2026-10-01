@@ -1,6 +1,6 @@
 # shellcheck shell=bash
 # cmaal: Arch Linux news
-# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/archlinux-dev/cmaal
+# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/femboyss/cmaal
 
 # ---------------------------------------------------------------------------
 # Arch news
