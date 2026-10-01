@@ -1,6 +1,6 @@
 # shellcheck shell=bash
 # cmaal: background update alerts (systemd user timer + desktop notification)
-# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/archlinux-dev/cmaal
+# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/femboyss/cmaal
 #
 # `cmaal alerts on` installs a user timer (no root needed). Every
 # ALERTS_EVERY it runs `cmaal __alert-check`, which counts updates and unread

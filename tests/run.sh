@@ -438,7 +438,7 @@ if test_case "self-update asks the GitHub API first (raw can be 5 minutes old)";
     export MOCK_REMOTE_VERSION MOCK_API_VERSION
     run self-update
     out_has "cmaal is up to date"
-    log_has "api.github.com/repos/archlinux-dev/cmaal/contents/VERSION?ref=main"
+    log_has "api.github.com/repos/femboyss/cmaal/contents/VERSION?ref=main"
     # API down or garbage: fall back to raw
     MOCK_API_VERSION="<html>"
     MOCK_REMOTE_VERSION=$(tr -d "[:space:]" <"$ROOT/VERSION")

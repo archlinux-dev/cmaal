@@ -1,6 +1,6 @@
 # shellcheck shell=bash
 # cmaal: "command not found" helper for bash, zsh and fish
-# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/archlinux-dev/cmaal
+# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/femboyss/cmaal
 #
 # Type a program you don't have and the shell tells you which package has it:
 #   $ htop

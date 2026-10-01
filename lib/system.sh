@@ -1,6 +1,6 @@
 # shellcheck shell=bash
 # cmaal: sys, doctor, services, logs, ports, ip
-# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/archlinux-dev/cmaal
+# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/femboyss/cmaal
 
 # ---------------------------------------------------------------------------
 # System info / doctor

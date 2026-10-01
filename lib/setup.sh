@@ -1,7 +1,7 @@
 # shellcheck shell=bash
 # cmaal: first-run setup (`cmaal setup`, starts by itself the first time
 # you open the menu)
-# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/archlinux-dev/cmaal
+# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/femboyss/cmaal
 
 # set_config KEY VALUE: change one setting in ~/.config/cmaal/config
 set_config() {

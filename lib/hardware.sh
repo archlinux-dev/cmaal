@@ -1,6 +1,6 @@
 # shellcheck shell=bash
 # cmaal: hardware drivers and gaming setup
-# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/archlinux-dev/cmaal
+# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/femboyss/cmaal
 
 # gpu_vendors -> nvidia / amd / intel, one per line (hybrid laptops have two)
 gpu_vendors() {

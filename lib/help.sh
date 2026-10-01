@@ -1,6 +1,6 @@
 # shellcheck shell=bash
 # cmaal: help text
-# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/archlinux-dev/cmaal
+# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/femboyss/cmaal
 
 help_text() {
     # German (or another language) help, when there is one

@@ -1,6 +1,6 @@
 # shellcheck shell=bash
 # cmaal: plugins, your own commands in ~/.config/cmaal/plugins
-# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/archlinux-dev/cmaal
+# Part of cmaal, sourced by /usr/bin/cmaal. https://github.com/femboyss/cmaal
 #
 # A plugin is a bash file <name>.sh that defines plugin_<name>. It becomes
 # `cmaal <name>`. Dashes in the name turn into underscores in the function:

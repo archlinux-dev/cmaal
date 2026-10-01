@@ -11,7 +11,7 @@ CMAAL_VERSION="2.1.0"
 
 set -o pipefail
 
-CMAAL_REPO="${CMAAL_REPO:-archlinux-dev/cmaal}"
+CMAAL_REPO="${CMAAL_REPO:-femboyss/cmaal}"
 CMAAL_BRANCH="${CMAAL_BRANCH:-main}"
 RAW="https://raw.githubusercontent.com/${CMAAL_REPO}/${CMAAL_BRANCH}"
 

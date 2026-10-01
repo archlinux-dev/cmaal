@@ -39,7 +39,7 @@ $ cmaal -S discord visual-studio-code-bin spotify
 ## Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/archlinux-dev/cmaal/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/femboyss/cmaal/main/install.sh | bash
 ```
 
 Run it as your normal user (not root). It builds cmaal with `makepkg` and installs it with pacman, so it's a real package:
@@ -61,7 +61,7 @@ yay -S cmaal-git
 Other ways to install:
 
 ```bash
-git clone https://github.com/archlinux-dev/cmaal.git
+git clone https://github.com/femboyss/cmaal.git
 cd cmaal
 ./install.sh             # same as above, builds your local checkout
 ./install.sh --user      # no package, no root: ~/.local
@@ -251,7 +251,7 @@ Wi-Fi uses NetworkManager (`nmcli`); with iwd, `cmaal wifi` opens `iwctl` instea
 
 ```bash
 pacman -Sy git
-git clone https://github.com/archlinux-dev/cmaal
+git clone https://github.com/femboyss/cmaal
 ./cmaal/bin/cmaal rescue
 ```
 
