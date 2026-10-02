@@ -3,3 +3,6 @@ packaging/src/
 packaging/pkg/
 packaging/cmaal/
 *.pkg.tar.*
+
+# Grove local data
+web/data/

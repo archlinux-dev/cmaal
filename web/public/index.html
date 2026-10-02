@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Grove</title>
+  <meta name="description" content="Grove is a place for your communities to hang out. Channels, realtime chat, reactions and invites, all running on your own machine.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+  <!-- Landing page -->
+  <section id="view-landing" class="view" hidden>
+    <header class="nav">
+      <a class="brand" href="#/"><span class="brand-mark">🌳</span> Grove</a>
+      <nav class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#how">How it works</a>
+        <a href="#api">API</a>
+      </nav>
+      <div class="nav-cta">
+        <a class="btn btn-ghost" href="#/login">Log in</a>
+        <a class="btn btn-primary" href="#/register">Get started</a>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-glow"></div>
+        <p class="eyebrow">Your communities, rooted at home</p>
+        <h1>A place where your people<br><span class="grad">actually hang out.</span></h1>
+        <p class="lead">Grove brings your friends, groups and teams together with channels, realtime chat, reactions and invite links. It runs entirely on your own machine. No cloud, no tracking, no ads.</p>
+        <div class="hero-cta">
+          <a class="btn btn-primary btn-lg" href="#/register">Start a community</a>
+          <a class="btn btn-ghost btn-lg" href="#/login">I have an account</a>
+        </div>
+
+        <div class="mock" aria-hidden="true">
+          <div class="mock-rail">
+            <span class="mock-icon on">🎮</span><span class="mock-icon">🎨</span><span class="mock-icon">📚</span><span class="mock-icon add">+</span>
+          </div>
+          <div class="mock-side">
+            <b>Game Night</b>
+            <span class="mock-ch on"># general</span>
+            <span class="mock-ch"># clips</span>
+            <span class="mock-ch"># lfg</span>
+          </div>
+          <div class="mock-chat">
+            <div class="mock-msg"><i style="background:#ff6b9d">M</i><div><b>mira</b><p>who's on tonight? 👀</p></div></div>
+            <div class="mock-msg"><i style="background:#20c997">J</i><div><b>jun</b><p>me! bringing snacks this time</p><span class="mock-react">🍕 3</span></div></div>
+            <div class="mock-msg"><i style="background:#7c5cff">A</i><div><b>alex</b><p>setting up the lobby now :3</p></div></div>
+            <div class="mock-input">Message #general</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="features" class="section">
+        <h2>Everything a community needs</h2>
+        <div class="grid">
+          <article class="card"><span class="card-icon">💬</span><h3>Realtime chat</h3><p>Messages, edits, deletes and reactions show up instantly for everyone, powered by a live event stream.</p></article>
+          <article class="card"><span class="card-icon">#️⃣</span><h3>Channels</h3><p>Split conversations by topic. Owners create, rename and remove channels whenever they like.</p></article>
+          <article class="card"><span class="card-icon">🔗</span><h3>Invite links</h3><p>Share a short code to bring people in. Reset it any time to shut the door.</p></article>
+          <article class="card"><span class="card-icon">🟢</span><h3>Presence</h3><p>See who is online, what their status says, and who is typing right now.</p></article>
+          <article class="card"><span class="card-icon">✨</span><h3>Markdown</h3><p>Bold, italics, code, code blocks, spoilers and clickable links in every message.</p></article>
+          <article class="card"><span class="card-icon">🏠</span><h3>Fully local</h3><p>One Node process, one JSON file. Your data never leaves your computer.</p></article>
+        </div>
+      </section>
+
+      <section id="how" class="section">
+        <h2>Up and running in three steps</h2>
+        <ol class="steps">
+          <li><b>Create an account.</b> Pick a username and password. It is stored hashed on your machine.</li>
+          <li><b>Start a community.</b> Give it a name and an emoji. You get #welcome and #general for free.</li>
+          <li><b>Invite your people.</b> Copy the invite code and send it. They join with one click.</li>
+        </ol>
+      </section>
+
+      <section id="api" class="section">
+        <h2>A real API, right on localhost</h2>
+        <p class="muted center">Everything the app does goes through a JSON REST API you can script against.</p>
+        <pre class="code"><code>curl -X POST localhost:3000/api/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"you","password":"secret"}'
+
+curl localhost:3000/api/communities -H "Authorization: Bearer $TOKEN"</code></pre>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>🌳 Grove</span>
+      <span class="muted">Runs locally. Made with HTML, CSS and JavaScript.</span>
+    </footer>
+  </section>
+
+  <!-- Auth -->
+  <section id="view-auth" class="view auth-view" hidden>
+    <a class="brand auth-brand" href="#/"><span class="brand-mark">🌳</span> Grove</a>
+    <form id="auth-form" class="auth-card" autocomplete="on">
+      <h1 id="auth-title">Welcome back!</h1>
+      <p id="auth-sub" class="muted">We're so excited to see you again.</p>
+      <label>Username
+        <input name="username" required minlength="3" maxlength="24" autocomplete="username" pattern="[A-Za-z0-9_.]+">
+      </label>
+      <label id="display-wrap" hidden>Display name <span class="muted">(optional)</span>
+        <input name="displayName" maxlength="32" autocomplete="nickname">
+      </label>
+      <label>Password
+        <input name="password" type="password" required minlength="6" autocomplete="current-password">
+      </label>
+      <p id="auth-error" class="error" role="alert" hidden></p>
+      <button class="btn btn-primary btn-block" type="submit" id="auth-submit">Log in</button>
+      <p class="muted small" id="auth-switch"></p>
+    </form>
+  </section>
+
+  <!-- App -->
+  <section id="view-app" class="view app" hidden>
+    <nav class="rail" aria-label="Communities">
+      <button class="rail-btn home" id="home-btn" title="Home">🌳</button>
+      <div class="rail-sep"></div>
+      <div id="community-list" class="rail-list"></div>
+      <button class="rail-btn add" id="add-community-btn" title="Create or join a community">+</button>
+    </nav>
+
+    <aside class="sidebar" id="sidebar">
+      <header class="side-head" id="community-head">
+        <span id="community-name">Home</span>
+        <button class="icon-btn" id="community-menu-btn" title="Community settings" hidden>⚙</button>
+      </header>
+      <div class="side-scroll">
+        <div class="side-label" id="channels-label" hidden>
+          <span>Channels</span>
+          <button class="icon-btn small" id="add-channel-btn" title="Create channel" hidden>+</button>
+        </div>
+        <ul id="channel-list" class="channel-list"></ul>
+      </div>
+      <footer class="me" id="me-panel">
+        <span class="avatar" id="me-avatar"></span>
+        <div class="me-text">
+          <b id="me-name"></b>
+          <span id="me-status" class="muted small"></span>
+        </div>
+        <button class="icon-btn" id="settings-btn" title="User settings">⚙</button>
+      </footer>
+    </aside>
+
+    <main class="chat" id="chat">
+      <header class="chat-head">
+        <button class="icon-btn menu-toggle" id="menu-toggle" title="Menu">☰</button>
+        <span class="hash" id="chat-hash">#</span>
+        <b id="chat-title"></b>
+        <span class="topic" id="chat-topic"></span>
+        <button class="icon-btn members-toggle" id="members-toggle" title="Members">👥</button>
+      </header>
+
+      <div class="home-panel" id="home-panel" hidden>
+        <div class="home-inner">
+          <h2>Hey <span id="home-name"></span> 👋</h2>
+          <p class="muted" id="home-text"></p>
+          <div class="home-actions">
+            <button class="btn btn-primary" data-action="create">Create a community</button>
+            <button class="btn btn-ghost" data-action="join">Join with invite</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="messages" id="messages" aria-live="polite"></div>
+      <div class="typing" id="typing"></div>
+      <form class="composer" id="composer">
+        <textarea id="composer-input" rows="1" maxlength="4000" placeholder="Message"></textarea>
+        <button class="icon-btn send" type="submit" title="Send">➤</button>
+      </form>
+    </main>
+
+    <aside class="members" id="members">
+      <div id="member-list"></div>
+    </aside>
+  </section>
+
+  <!-- Modal host -->
+  <div class="modal-backdrop" id="modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" id="modal-body"></div>
+  </div>
+
+  <div class="toast" id="toast" role="status" hidden></div>
+
+  <script src="/api.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
